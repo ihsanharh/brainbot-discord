@@ -55,9 +55,6 @@ bot.on("ready", async () => {
   console.log(
     `online in ${bot.guilds.cache.size} servers`
   );
-  console.log(` • ${bot.users.cache.filter(user => user.bot).size} Bots`);
-  console.log(` • ${bot.users.cache.filter(user => !user.bot).size} Human`);
-  console.log(` • ${bot.channels.cache.size} Channel`);
 });
 
 bot.on("guildCreate", guild => {
@@ -92,6 +89,8 @@ bot.on("guildCreate", guild => {
 });
 
 bot.on("message", message => {
+const messages = ["yo wassup? need help run ` --help `", "what? you can just run ` --help ` sir", "what now?!! i told you just run ` --help ` dont ping me.", "dont ping me! ,you know you can just run ` --help `"]
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
   if (message.author.bot) return false;
 
   if (
