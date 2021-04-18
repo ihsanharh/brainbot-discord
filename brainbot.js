@@ -12,7 +12,7 @@ const fs = require("fs");
 const chatcord = require("chatcord");
 const chat = new chatcord.Client();
 const mongoose = require("mongoose");
-const { mongoURI } = require("./botconfig.json");
+const { mongoURI, scope, web, logch } = require("./botconfig.json");
 
 mongoose
   .connect(mongoURI, {
@@ -21,7 +21,7 @@ mongoose
     useFindAndModify: false
   })
   .then(_ => {
-    console.log("DataBase connected ✓");
+    console.log("Connected To MongoDB");
   });
 
 setInterval(() => {
@@ -42,7 +42,7 @@ fs.readdir("./commands/", (err, files) => {
   }
   jsfile.forEach(f => {
     let props = require(`./commands/${f}`);
-    console.log(`+ ${f} ✓`);
+    console.log(`+ ${f} loaded`);
     bot.commands.set(props.help.name, props);
 
     props.help.aliases.forEach(alias => {
@@ -52,29 +52,27 @@ fs.readdir("./commands/", (err, files) => {
 });
 
 bot.on("ready", async () => {
-  console.log(
-    `online in ${bot.guilds.cache.size} servers`
-  );
-});
-
+  console.log(`online in ${bot.guilds.cache.size} servers`);
+})
+       
 bot.on("guildCreate", guild => {
   let found = 0;
   guild.channels.cache.map(channel => {
     if (found === 0) {
-      if (channel.type === "text") {
+     if (channel.type === "text") {
         if (channel.permissionsFor(bot.user).has("VIEW_CHANNEL") === true) {
           if (channel.permissionsFor(bot.user).has("SEND_MESSAGES") === true) {
             if (
-              channel.permissionsFor(bot.user).has("SEND_MESSAGES") === true
+             channel.permissionsFor(bot.user).has("SEND_MESSAGES") === true
             ) {
               const embed = new Discord.MessageEmbed()
-                .setAuthor("Chat Bot", bot.user.avatarURL())
-                .setDescription(
+                .setAuthor("Brain Bot", bot.user.avatarURL())
+               .setDescription(
                   `Hey there! I am **Brain Bot**, an AI Powered Chat Bot\nTo get started type **--help**, or you can dm me\n\n`
-                )
-                .addField(
-                  "**Links**",
-                  `**[Website](https://brainbot-xyz.glitch.me) ● [Invite Me](https://discord.com/api/oauth2/authorize?client_id=796219147658854411&permissions=3072&scope=bot)**`
+               )
+               .addField(
+                 "**Links**",
+                 `**[Website](${web})**`
                 )
                 .setColor("BLURPLE")
                 .setFooter("Have fun chatting with me!");
@@ -89,7 +87,7 @@ bot.on("guildCreate", guild => {
 });
 
 bot.on("message", message => {
-const messages = ["yo wassup? need help run ` --help `", "what? you can just run ` --help ` sir", "what now?!! i told you just run ` --help ` dont ping me.", "dont ping me! ,you know you can just run ` --help `"]
+  const messages = ["yo wassup? need help run ` --help `", "what? you can just run ` --help ` sir", "what now?!! i told you just run ` --help ` dont ping me.", "dont ping me! ,you know you can just run ` --help `"]
   const randomMessage = messages[Math.floor(Math.random() * messages.length)];
   if (message.author.bot) return false;
 
@@ -100,9 +98,7 @@ const messages = ["yo wassup? need help run ` --help `", "what? you can just run
     return false;
 
   if (message.mentions.has(bot.user.id)) {
-    message.channel.send(
-      "yo wassup? need help? run ` --help ` to see full help."
-    );
+    message.channel.send(randomMessage);
   }
 });
 
@@ -155,7 +151,8 @@ bot.on("message", async message => {
       async (err, data) => {
         if (err) throw err;
         const channel = message.guild.channels.cache.get(data.channel);
-        if (message.channel.id !== channel.id) {
+
+         if (message.channel.id !== channel.id) {
           return;
         } else {
           chat.chat(message.cleanContent).then(reply => {
@@ -201,7 +198,7 @@ app.get("/data/:serverID", (req, res) => {
           success: "false",
           data: {
             message:
-              "It seems like you haven't chatted with the bot yet. Invite it and start chatting!"
+              "setup first"
           }
         };
         res.set("Content-Type", "application/json");
