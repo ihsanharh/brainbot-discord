@@ -1,6 +1,9 @@
 {
-    "token": "Nzk2MjE5MTQ3NjU4OD",
+    "token": "Nzk2MjE5MTQ3NjU4ODU0NDEx.X_Uu3Q.UMLZjsFkwqfR_MwBFwQFNTHnk-g",
     "prefix": "--",
     "owners": "591416431598632980",
-    "mongoURI": "mongodb+srv://Brain-bot:ihsanjr7790@cluster0.xl1ly.mongodb.net/Brain-bot?retryWrites=true&w=majority"
+    "logch": "819740521228271637",
+    "scope": "3072",
+    "web": "https://brainbot-xyz.glitch.me",
+    "mongoURI": "mongodb+srv://Brain-bot:ihsanjr77@cluster0.xl1ly.mongodb.net/Brain-bot?retryWrites=true&w=majority"
 }
