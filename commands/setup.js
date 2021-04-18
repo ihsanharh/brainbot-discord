@@ -5,14 +5,14 @@ module.exports.run = async (_bot, message) => {
     if (!message.member.hasPermission("MANAGE_CHANNELS")) {
        const embed1 = new MessageEmbed()
            .setColor(`#f04947`)
-           .setDescription("❌ **| You are lacking permission of `MANAGE_CHANNELS`**\n\**doesnt have `MANAGE_CHANNELS` permission? DM me instead:3**")
+           .setDescription("<:BRAIN_XMARK:829169288942190633> **| You can't use that!**")
        return message.channel.send(embed1)
     }
     const channel = message.mentions.channels.first();
     if (!channel) {
         const embed1 = new MessageEmbed()
             .setColor(`#f04947`)
-            .setDescription(`**❌ | You forgot to mention a channel for the chat bot**`)
+            .setDescription(`<:BRAIN_XMARK:829169288942190633> **| Please mention a channel**`)
         return message.channel.send(embed1)
     }
     await guildDB.findOne({
@@ -24,7 +24,7 @@ module.exports.run = async (_bot, message) => {
             data.save();
             const embed3 = new MessageEmbed()
                 .setColor(`#43b481`)
-                .setDescription(`**✅ | Successfully setted chat bot in <#${channel.id}>**`)
+                .setDescription(`<:BRAIN_CHECK:829169271963123752> **| Successfully setted in <#${channel.id}>**`)
             message.channel.send(embed3)
         } else {
             const newData = new guildDB({
@@ -34,7 +34,7 @@ module.exports.run = async (_bot, message) => {
             newData.save();
             const embed3 = new MessageEmbed()
                 .setColor(`#43b481`)
-                .setDescription(`**✅ | Successfully setted chat bot in <#${channel.id}>**`)
+                .setDescription(`<:BRAIN_CHECK:829169271963123752> **| Successfully setted in <#${channel.id}>**`)
             message.channel.send(embed3)
         }
     })

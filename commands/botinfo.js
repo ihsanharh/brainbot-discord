@@ -1,19 +1,18 @@
 const Discord = require("discord.js");
 const botconfig = require("../botconfig.json");
+const { scope, web } = require("../botconfig.json");
+const { mainc } = require("../color.json")
 
 module.exports.run = async (bot, message, args) => {
-  if (message.channel.name === `${botconfig["🤖・bot-chat"]}`) {
-    return;
-  }
   const embed = new Discord.MessageEmbed()
-    .setColor("BLURPLE")
+    .setColor(mainc)
     .setTitle("Bot Info")
-    .setAuthor("Chat Bot", `${bot.user.displayAvatarURL()}`)
+    .setAuthor("Bot info", `${bot.user.displayAvatarURL()}`)
     .setDescription(
       "Brain Bot is a discord chat bot powered with AI from [cleverbot](https://cleverbot.com), chat with this bot on dm or setup in your server, do ` --languange ` to check supported languange"
     )
     .addField("Links",
-      `**[Website](https://brainbot-xyz.glitch.me) ● [Invite](https://discord.com/api/oauth2/authorize?client_id=796219147658854411&permissions=3072&scope=bot)**`
+      `**[Website](${web}) ● [Invite](https://discord.com/api/oauth2/authorize?client_id=796219147658854411&permissions=${scope}&scope=bot%20applications.commands)**`
     )
     .setImage("https://i.imgur.com/1tPto2O.jpeg")
     .setTimestamp()
