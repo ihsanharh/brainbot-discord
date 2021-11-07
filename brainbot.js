@@ -2,8 +2,8 @@ require("dotenv").config();
 const Discord = require("discord.js");
 const express = require("express");
 const app = express();
-//const Topgg = require("@top-gg/sdk");
-//const api = new Topgg.Api(process.env.topGG);
+const Topgg = require("@top-gg/sdk");
+const api = new Topgg.Api(process.env.TOPGG);
 const bot = new Discord.Client({ disableEveryone: true });
 const guildDB = require("./models/chat");
 const chat = require("cleverbot-free");
@@ -21,11 +21,11 @@ mongoose
     console.log("Connected To MongoDB");
   });
 
-/*setInterval(() => {
+setInterval(() => {
   api.postStats({
     serverCount: bot.guilds.cache.size
   });
-}, 60000);*/
+}, 60000);
 
 bot.commands = new Discord.Collection();
 bot.aliases = new Discord.Collection();
@@ -62,6 +62,8 @@ bot.on("guildCreate", guild => {
             if (
               channel.permissionsFor(bot.user).has("SEND_MESSAGES") === true
             ) {
+              let message = `<:xyzz_join:889863595301683250> has joined **${guild.name}**(${guild.id})\n**- Member Count:** ${guild.memberCount}\n[${bot.guilds.cache.size}]`
+              
               const embed = new Discord.MessageEmbed()
                 .setAuthor("Brain Bot", bot.user.avatarURL())
                 .setDescription(
@@ -70,7 +72,13 @@ bot.on("guildCreate", guild => {
                 .addField("**Links**", `**[Website](${web})**`)
                 .setColor("BLURPLE")
                 .setFooter("Have fun chatting with me!");
-              channel.send(embed);
+              channel.send(embed).then(async c => {
+                const hook = new Discord.WebhookClient({ id: process.env.HOOK_ID, token: process.env.HOOK_TOKEN })
+                await hook.send(message, {
+                  username: bot.user.username,
+                  avatarURL: bot.user.displayAvatarURL(),
+                })
+              })
               found = 1;
             }
           }
@@ -79,6 +87,15 @@ bot.on("guildCreate", guild => {
     }
   });
 });
+
+bot.on("guildDelete", async guild => {
+  const hook = new Discord.WebhookClient({ id: process.env.HOOK_ID, token: process.env.HOOK_TOKEN })
+  
+  await hook.send(`<:xyzz_leave:889863649785688074> has been kicked from **${guild.name}**(${guild.id})\n**- OwnerId:** ${guild.owner.user.id}\n[${bot.guilds.cache.size}]`, {
+    username: bot.user.username,
+    avatarURL: bot.user.displayAvatarURL()
+  })
+}) 
 
 bot.on("message", message => {
   const messages = [
@@ -97,14 +114,13 @@ bot.on("message", message => {
     return false;
 
   if (message.mentions.has(bot.user.id)) {
-    message.channel.send(randomMessage);
+    return message.channel.send(randomMessage);
   }
 });
 
 bot.on("message", async message => {
   if (message.channel.type === "dm") return;
   if (message.author.bot) return;
-  //let prefix = prefix;
   if (!message.content.startsWith(prefix)) return;
   let args = message.content
     .slice(prefix.length)
