@@ -11,13 +11,12 @@ module.exports.run = async (bot, message, args) => {
         .setColor(mainc)
         .setTitle('Command list')
         .setDescription(`**\`${botconfig.prefix}botinfo  \`   | Bot Information \n\`${botconfig.prefix}language \`   | Supported language \n\`${botconfig.prefix}status   \`   | Statuspage \n\`${botconfig.prefix}help     \`   | Show the help menu \n\`${botconfig.prefix}setup    \`   | Setup the chat bot! \n\`${botconfig.prefix}delete   \`   | Deletes the bot configuration!**`)
-        .addField('Beta Feature <:BETA:827180146644746301>', `**\`${botconfig.prefix}talk     \`   | Talk with brainbot through Voice Channel :p**\n(you should join vc first)`)
         .addField('**Links**',`**[Website](${web}) ● [Invite](https://discord.com/api/oauth2/authorize?client_id=796219147658854411&permissions=${scope}&scope=bot%20applications.commands)**`)
         .setTimestamp()
         .setThumbnail(bot.user.displayAvatarURL())
         .setFooter(`Brain Bot`, `${bot.user.displayAvatarURL()}`);
     message.channel.send(embed)
-  message.channel.send(warn).then(warn => warn.delete({setTimeout: 100000}))
+  //message.channel.send(warn).then(warn => warn.delete({setTimeout: 100000}))
 }
 
 module.exports.help = {
