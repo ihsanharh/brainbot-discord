@@ -26,7 +26,7 @@ module.exports.run = (bot, message, args) => {
   if (!query) {
     const embed1 = new MessageEmbed()
       .setColor(`#f04947`)
-      .setDescription("❌ **| Please give me something for evaluation!**")
+      .setDescription("<:BRAIN_XMARK:829169288942190633> **| Please give me something for evaluation!**")
     return message.channel.send(embed1)
   }
   else {

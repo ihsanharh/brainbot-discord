@@ -12,4 +12,4 @@ const listener = server.listen(process.env.PORT, function() {
 	console.log(`Your app is listening on port ` + listener.address().port);
 });
 
-require('./shard.js');
+require('./brainbot.js');

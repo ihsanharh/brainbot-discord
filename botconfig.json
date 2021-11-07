@@ -1,9 +1,7 @@
 {
-    "token": "Nzk2MjE5MTQ3NjU4ODU0NDEx.X_Uu3Q.UMLZjsFkwqfR_MwBFwQFNTHnk-g",
-    "prefix": "--",
-    "owners": "591416431598632980",
-    "logch": "819740521228271637",
-    "scope": "3072",
-    "web": "https://brainbot-xyz.glitch.me",
-    "mongoURI": "mongodb+srv://Brain-bot:ihsanjr77@cluster0.xl1ly.mongodb.net/Brain-bot?retryWrites=true&w=majority"
+  "prefix": "--",
+  "owners": "14131598632980",
+  "logch": "8197401228271637",
+  "invite": "https://discord.com/api/oauth2/authorize?client_id=796219147658854411&permissions=3072&scope=bot%20applications.commands",
+  "web": "https://ainbot-xyz.glitch.me"
 }
