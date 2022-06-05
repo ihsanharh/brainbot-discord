@@ -1,0 +1,21 @@
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"outDir": "./dist/",
+		"rootDir": "./src/",
+		"strict": false,
+		"noImplicitReturns": true,
+		"noImplicitAny": true,
+		"moduleResolution": "node",
+		"module": "commonjs",
+		"target": "es2021",
+		"allowJs": true
+	},
+	"compilerSection": {
+		"types": ["node"]
+	},
+	"ts-node": {
+		"files": true
+	},
+	"include": ["./src/**/*", "environment.d.ts"]
+}

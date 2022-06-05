@@ -1,0 +1,33 @@
+export default {
+	"BOT": "<:BOT:949259902428274688>",
+	"BUGHUNTER_LEVEL_1": "<:bug_hunter_level_1:949245317864378379>",
+	"BUGHUNTER_LEVEL_2": "<:bug_hunter_level_2:949245244694741002>",
+	"DISCORD_CERTIFIED_MODERATOR": "<:certified_moderator:949246085019365386>",
+	"DISCORD_EMPLOYEE": "<:staff:949245819138215936>",
+	"EARLY_SUPPORTER": "<:early_supporter:949251130288918578>",
+	"EARLY_VERIFIED_BOT_DEVELOPER": "<:developer:949249871267917856>",
+	"HYPESQUAD_EVENTS": "<:hypesquad_events:949255719096561735>",
+	"HOUSE_BALANCE": "<:hypesquad_balance:949245038511136798>",
+	"HOUSE_BALANCE_GOLD": "<:hypesquad_balance_gold:949244950900539443>",
+	"HOUSE_BRAVERY": "<:hypesquad_bravery:949244673963196436>",
+	"HOUSE_BRILLIANCE": "<:hypesquad_brilliance:949245119326986240>",
+	"PARTNERED_SERVER_OWNER":"<:partner:949245657615577088>",
+	"VERIFIED_BOT": "<:BOT_1:949249961793568789><:BOT_2:949250016961232947>",
+	
+	
+	"announcement": "<:announcement:889862572696829993>",
+	"chat": "<:chat:889862837936222229>",
+	"check": "<:check:889864800958550106>",
+	"globe": "<:globe:949947472862650418>",
+	"id": "<:id:889863274378723388>",
+	"info": "<:info:889863471938809906>",
+	"image": "<:image:889863319840755713>",
+	"join": "<:join:948669301022396566>",
+	"leave": "<:leave:948669326016274482>",
+	"member": "<:member:889863893193736223>",
+	"message": "<:message:889864012060303431>",
+	"owner": "<:owner:949947793504600084>",
+	"questionmark": "<:questionmark:889864334400966677>",
+	"slash": "<:slash:889864576756248576>",
+	"xmark": "<:xmark:889863147891073105>"
+}
