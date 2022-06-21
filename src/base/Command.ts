@@ -154,6 +154,12 @@ export const CommandHandler = async (context: any, client: any) => {
 	if (command) {
 		if (command.permission.author.length >= 1) {
 			if (command.permission.author.includes("OWNER") && context.author.id !== OwnerId) return;
+			
+			var check_permission = context.channel.permissionsFor(context.member).missing(command.permission.author.filter((p: string) => p !== "OWNER"));
+			
+			if (check_permission.length >= 1) {
+				return context.channel.send({ content: `${Emojis['xmark']} **You can't use that.**` });
+			}
 		}
 		
 		try {
