@@ -127,21 +127,7 @@ export default class CommandBase {
 	}
 	
 	async reply(data: any) {
-		var command = this.command;
-		
-		if (this.slash) {
-			if (command.deferred) return command.editReply(data);
-			
-			return command.reply(data);
-		} else {
-			if (data.inline) {
-				delete data.inline;
-				
-				return command.reply(data);
-			}
-			
-			return command.channel.send(data);
-		}
+		return customReply(this.command, data);
 	}
 }
 
@@ -158,7 +144,7 @@ export const CommandHandler = async (context: any, client: any) => {
 			var check_permission = context.channel.permissionsFor(context.member).missing(command.permission.author.filter((p: string) => p !== "OWNER"));
 			
 			if (check_permission.length >= 1) {
-				return context.channel.send({ content: `${Emojis['xmark']} **You can't use that.**` });
+				return customReply(context, { content: `${Emojis['xmark']} **You can't use that.**` });
 			}
 		}
 		
@@ -167,5 +153,21 @@ export const CommandHandler = async (context: any, client: any) => {
 		} catch(reason: any) {
 			console.error(reason);
 		}
+	}
+}
+
+export async function customReply(context: any, data: any) {
+	if (context.type === "APPLICATION_COMMAND") {
+		if (context.deferred) return context.editReply(data);
+		
+		return context.reply(data);
+	} else {
+		if (data.inline) {
+			delete data.inline;
+			
+			return context.reply(data);
+		}
+		
+		return context.channel.send(data);
 	}
 }
