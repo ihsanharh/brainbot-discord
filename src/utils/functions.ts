@@ -24,3 +24,18 @@ export function countdown(s: number) {
 	
 	return tmp.join(' ');
 }
+
+export function cutString(Text: string, length: number) {
+	if (Text == null) {
+		return "";
+	}
+	if (Text.length <= length) {
+		return Text;
+	}
+	
+	Text = Text.substring(0, length);
+	let last = Text.lastIndexOf(" ");
+	Text = Text.substring(0, last);
+	
+	return Text + "...";
+}

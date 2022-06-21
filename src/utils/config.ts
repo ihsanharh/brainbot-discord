@@ -23,3 +23,6 @@ export const agents = [
 	"Mozilla/5.0 (Windows NT 6.0; sl-SI; rv:1.9.0.20) Gecko/20171113 Firefox/37.0",
 	"Opera/8.50 (Windows NT 5.01; sl-SI) Presto/2.10.282 Version/12.00"
 ]
+
+export const BotLogsChannel: string = process.env.BOT_LOGS_CHANNEL;
+export const MessageLogsChannel: string = process.env.MESSAGE_LOGS_CHANNEL;

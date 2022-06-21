@@ -16,10 +16,12 @@ export default class DeleteCommand extends Command {
 	}
 	
 	async execute() {
+		if (this.slash) await this.command.deferReply();
+		
 		const checkDatabase = await Database({
 			collection: "chat",
 			method: "find",
-			values: { _id: this.command.guild.id }
+			query: { _id: this.command.guild.id }
 		});
 		
 		if (checkDatabase && checkDatabase.channel !== null) {

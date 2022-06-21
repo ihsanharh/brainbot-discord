@@ -1,5 +1,5 @@
 interface AuthorInterface {
-	[key: any]: any;
+	[key: string]: any;
 }
 
 interface CommandChoice {

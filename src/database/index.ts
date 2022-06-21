@@ -6,7 +6,9 @@ import Chat from "./schemas/Chat";
 import Proxys from "./schemas/Proxy";
 
 export function connectToDatabase(): void {
-	connect(process.env.DATABASE_URI).then(() => {
+	const DB_URI = process.env.NODE_ENV === "production" ? process.env.PROD_DATABASE_URI : process.env.DEV_DATABASE_URI
+	
+	connect(DB_URI).then(() => {
 		console.log("Connected to the database.");
 	}).catch((reason: any) => {
 		console.error(reason);

@@ -19,6 +19,8 @@ export default class StatusCommand extends Command {
 	}
 	
 	async execute(): Promise<any> {
+		if (this.slash) await this.command.deferReply();
+		
 		var BotStatus: any = {
 			ping: this.client.ws.ping,
 			uptime: countdown(Number((this.client.uptime / 1000).toFixed(0))),
@@ -27,15 +29,31 @@ export default class StatusCommand extends Command {
 					collection: "proxy",
 					method: "find",
 					unlimited: true,
-					query: { available: true }
+					query: { banned: false }
 				})).length,
-				dead: 0
+				dead: (await Database({
+					collection: "proxy",
+					method: "find",
+					unlimited: true,
+					query: { banned: true }
+				})).length
 			}
+		}
+		
+		const Ping = BotStatus.ping
+		let PingColor;
+		
+		if (Ping <= 149) {
+			PingColor = this.colors["green.Status"]
+		} else if (Ping >= 150 && Ping <= 299) {
+			PingColor = this.colors["yellow.Status"]
+		} else {
+			PingColor = this.colors["red.Status"]
 		}
 		
 		var MeEmbed: any = {
 			title: `All Systems Operational`,
-			color: this.colors["green.Status"],
+			color: PingColor,
 			fields: [
 				{
 					name: "API",

@@ -22,8 +22,10 @@ export class Client extends Discord.Client {
 	}
 	
 	launch(): void {
+		const TOKEN = process.env.NODE_ENV === "production" ? process.env.PROD_TOKEN : process.env.DEV_TOKEN
+		
 		this.prepare();
-		this.login(process.env.TOKEN);
+		this.login(TOKEN);
 	}
 	
 	prepare(): void {
@@ -37,7 +39,7 @@ export class Client extends Discord.Client {
 		
 		
 		/**
-		 * All bot events handled here
+		 * All events received from Discord handled here
 		 */
 		fs.readdirSync(__dirname.replace("base", "") + "/actions/").forEach((ActionCategory: any) => {
 			fs.readdirSync(__dirname.replace("base", "") + `/actions/${ActionCategory}`).forEach(async (ActionFile: any) => {

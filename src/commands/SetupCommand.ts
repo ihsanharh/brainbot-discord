@@ -24,6 +24,8 @@ export default class SetupCommand extends Command {
 	}
 	
 	async execute() {
+		if (this.slash) await this.command.deferReply();	
+		
 		const TargetChannel = (await this.args({ name: "channel", mentions: "channels" }))[0];
 		
 		if (!TargetChannel) return this.InvalidUsage({ text: "Please mention a channel." })
@@ -41,7 +43,7 @@ export default class SetupCommand extends Command {
 		const checkDatabase = await Database({
 			collection: "chat",
 			method: "find",
-			values: { _id: this.command.guild.id }
+			query: { _id: this.command.guild.id }
 		});
 		
 		if (checkDatabase) {

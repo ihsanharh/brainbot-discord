@@ -18,13 +18,23 @@ export default class CommandBase {
 	public options?: CommandOption[];
 	public slash?: boolean;
 	
-	constructor(client: any, command: any) {
-		Object.defineProperty(this, "client", { value: client });
+	constructor(client: any, Command: any) {
+		Object.defineProperties(this, {
+			client: {
+				value: client,
+				writable: false
+			},
+			colors: {
+				value: Colors,
+				writable: false
+			},
+			emojis: {
+				value: Emojis,
+				writable: false
+			}
+		})
 		
-		Object.assign(this, command);
-		
-		this.colors = Colors;
-		this.emojis = Emojis;
+		Object.assign(this, Command);
 	}
 	
 	async args(options: any) {
