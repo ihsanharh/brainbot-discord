@@ -133,11 +133,14 @@ export default class CommandBase {
 
 export const CommandHandler = async (context: any, client: any) => {
 	if (context?.author.bot) return;
-	if (!context.guild) return;
 	
 	const command = client.commands.get(context.commandName);
   
 	if (command) {
+		if (!context.guild) {
+			return customReply(context, { content: `${Emojis["xmark"]} **Command is not available in DM.**` });
+		}
+		
 		if (command.permission.author.length >= 1) {
 			if (command.permission.author.includes("OWNER") && context.author.id !== OwnerId) return;
 			

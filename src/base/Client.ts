@@ -9,6 +9,7 @@ export class Client extends Discord.Client {
 			makeCache: Discord.Options.cacheWithLimits({
 				MessageManager: 5
 			}),
+			partials: ["CHANNEL", "MESSAGE"],
 			intents: ["DIRECT_MESSAGES", "GUILDS", "GUILD_MESSAGES"],
 			sweepers: {
 				messages: {

@@ -3,13 +3,14 @@ import { DefaultPrefix } from "../../utils";
 import Database from "../../database";
 
 export default async (message: any, client: any) => {
-	const ChatData = await Database({
+	let ChatData;
+	if (message.guild) ChatData = await Database({
 		collection: "chat",
 		method: "find",
 		query: { _id: message.guild.id }
 	});
 	
-	const prefix: string | any = ChatData ? ChatData.prefix : DefaultPrefix;
+	const prefix: string | any = ChatData ? ChatData?.prefix : DefaultPrefix;
 	
 	if (message.content.startsWith(prefix)) {
 		message.args = message.content.slice(prefix.length).trim().split(/ +/g);
