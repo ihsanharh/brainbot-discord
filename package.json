@@ -24,6 +24,7 @@
   "homepage": "https://github.com/xzfrost/brainbot#readme",
   "devDependencies": {
     "@types/ms": "^0.7.31",
+    "@types/node": "^18.0.0",
     "@types/node-os-utils": "^1.3.0",
     "@types/superagent": "^4.1.15",
     "@types/superagent-proxy": "^3.0.0",
@@ -32,7 +33,6 @@
     "typescript": "^4.6.4"
   },
   "dependencies": {
-    "@types/node": "^16.11.41",
     "discord.js": "^13.7.0",
     "dotenv": "^16.0.1",
     "mongoose": "^6.3.3",
