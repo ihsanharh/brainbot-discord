@@ -160,10 +160,6 @@ export const CommandHandler = async (context: any, client: any) => {
 }
 
 export async function customReply(context: any, data: any) {
-	if (process.env.NODE_ENV === "production") {
-		if (context.author.id !== OwnerId) return;
-	}
-	
 	if (context.type === "APPLICATION_COMMAND") {
 		if (context.deferred) return context.editReply(data);
 		
