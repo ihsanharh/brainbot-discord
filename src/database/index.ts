@@ -8,9 +8,7 @@ import Proxys from "./schemas/Proxy";
 export function connectToDatabase(): void {
 	const DB_URI = process.env.NODE_ENV === "production" ? process.env.PROD_DATABASE_URI : process.env.DEV_DATABASE_URI
 	
-	connect(DB_URI).then(() => {
-		console.log("Connected to the database.");
-	}).catch((reason: any) => {
+	connect(DB_URI).then(() => {}).catch((reason: any) => {
 		console.error(reason);
 	});
 }

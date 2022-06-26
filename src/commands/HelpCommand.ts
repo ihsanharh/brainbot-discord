@@ -54,8 +54,7 @@ export default class HelpCommand extends Command {
 		
 		var HelpEmbed: any = {
 			title: "Welcome to Brain Bot's Help menu!",
-			description: "it learns and imitates, is social content. can seem rude or inappropriate - talk with caution and at your own risk. the bot pretends to be human - don't give personal info even if it 'asks'. Brain Bot does not understand you, and cannot mean anything it 'says'.",
-			url: "https://brainbot.fun",
+			description: "it learns and imitates, is social content. can seem rude or inappropriate - talk with caution and at your own risk.\n\nthe bot pretends to be human - don't give personal info even if it 'asks'.\n\nBrain Bot does not understand you, and cannot mean anything it 'says'.",
 			color: this.colors["blurple.MainColor"],
 			thumbnail: {
 				url: this.client.user.displayAvatarURL()

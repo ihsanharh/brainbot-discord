@@ -1,3 +1,3 @@
 export default (client: any) => {
-	console.log(`${client.user.username} is now ready.`);
+	console.log(`[Shard ${client.shard.ids[0]}] ${client.user.username} is ${client?.user?.presence?.status}.`);
 }

@@ -4,6 +4,29 @@ import Database from "../../database";
 
 export default async (message: any, client: any) => {
 	let ChatData;
+	
+	const GetBlocked = await Database({
+		collection: "blocked",
+		method: "find",
+		unlimited: true,
+		query: {}
+	});
+	
+	if (GetBlocked.length >= 1) {
+		const BlockedUser = GetBlocked.filter((blocked: any) => blocked.type === "USER").map((bu: any) => {
+			return bu.id;
+		});
+		const BlockedGuild = GetBlocked.filter((blocked: any) => blocked.type === "GUILD").map((bg: any) => {
+			return bg.id;
+		});
+		
+		if (message.guild) {
+			if (BlockedGuild.includes(message?.guild?.id)) return;
+		}
+		
+		if (BlockedUser.includes(message?.author?.id)) return;
+	}
+	
 	if (message.guild) ChatData = await Database({
 		collection: "chat",
 		method: "find",
