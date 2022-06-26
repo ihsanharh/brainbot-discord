@@ -1,3 +1,5 @@
+import { WebhookClient } from 'discord.js';
+
 export function replaceAll(text: string, variable: any) {
 	var re = new RegExp(Object.keys(variable).join("|"),"gi");
 	
@@ -38,4 +40,10 @@ export function cutString(Text: string, length: number) {
 	Text = Text.substring(0, last);
 	
 	return Text + "...";
+}
+
+export function sendDWebhook(data: any, webhook: string): void {
+	const WebHook = new WebhookClient({ url: webhook });
+	
+	WebHook.send(data);
 }
