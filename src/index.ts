@@ -20,11 +20,6 @@ manager.on('shardCreate', (shard: any) => {
 		console.log(`[Manager] Shard ${shard.id} exiting`);
 	});
 	
-	shard.on('message', (message: any) => {
-		console.log(`[Manager] received message from Shard ${shard.id}`);
-		console.log(message);
-	})
-	
 	shard.on('spawn', (process: any) => {
 		console.log(`[Manager] Launched Shard ${shard.id}`);
 	});
