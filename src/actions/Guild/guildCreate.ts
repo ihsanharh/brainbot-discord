@@ -38,7 +38,11 @@ export default async (guild: any, client: any) => {
 				return filterChannel.first().send({ content: `Hey! Brain Bot's here, I'm an **AI-Powered** Chat Bot. Thanks for adding me to your server!\n\n${firstTime}` });
 			}
 		}
-	})
+	});
 	
-	if (LoggingChannel) LoggingChannel.send({ content: `${Emoji["join"]} has been added to **${guild?.name}\n[${client.guilds.cache.size}]**` });
+	if (LoggingChannel) {
+		const GuildsCount = (await client.shard.fetchClientValues("guilds.cache.size")).reduce((prev: any, val: any) => prev + val, 0);
+		
+		LoggingChannel.send({ content: `${Emoji["join"]} has been added to **${guild?.name}\n[${GuildsCount}]**` });
+	}
 }
