@@ -26,4 +26,4 @@ export const agents = [
 
 export const BotLogsChannel: string = process.env.BOT_LOGS_CHANNEL;
 export const MessageLogsChannel: string = process.env.MESSAGE_LOGS_CHANNEL;
-export const ShardsCount: number = 4;
+export const ShardsCount: number = 2;

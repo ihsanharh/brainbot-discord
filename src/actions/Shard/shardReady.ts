@@ -1,5 +1,5 @@
 export default (shardId: number, unavailableGuilds: any) => {
-	console.log(`[Shard ${shardId}] turns ready`);
+	if (unavailableGuilds) return console.log(`[Shard ${shardId}] turns ready with ${unavailableGuilds.size} unavailable guilds`);
 	
-	if (unavailableGuilds) console.log(`[Shard ${shardId}] has ${unavailableGuilds.size} unavailable guilds`);
+	console.log(`[Shard ${shardId}] turns ready`);
 }
