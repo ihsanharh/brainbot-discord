@@ -1,5 +1,3 @@
-import { WebhookClient } from 'discord.js';
-
 import { cutString, sendDWebhook } from "./index";
 
 process.on('unhandledRejection', async (reason: any, p: any) => {
