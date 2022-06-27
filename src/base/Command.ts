@@ -66,11 +66,14 @@ export default class CommandBase {
 				
 				if (optionsArray.length < 1) {
 					for (let item of this.command.args) {
+						if (isNaN(item)) return optionsArray;
+						
 						try {
 							const res = await this.client[options.mentions].fetch(item, { force: true, allowUnknownGuild: true });
 							
 							optionsArray.push(res)
 						} catch(err) {
+							console.error(err)
 							return;
 						}
 					}
