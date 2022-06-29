@@ -29,7 +29,7 @@ chat(content).then((response: any) => {
 		reply({ content: `${response}` }).then((DiscordMessage: any) => {
 			parentPort.postMessage(JSON.stringify({ t: "SESSION_ACK", s: session, d: {} }))
 		});
-	}, content.length * 250);
+	}, response.length * 250);
 }).catch(() => {
 	reply({ content: `\`\`\`\nOh no! something went wrong, Please try again in a few minutes.\`\`\`` });
 })
