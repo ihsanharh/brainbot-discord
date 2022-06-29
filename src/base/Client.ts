@@ -1,8 +1,11 @@
 import * as Discord from 'discord.js';
 import * as fs from 'fs';
 
+import { BotToken } from "../utils/config";
+
 export class Client extends Discord.Client {
-	public commands: any;
+	public commands: Discord.Collection<string | number, any>;
+	public sessions: Discord.Collection<string | number, any>;
 	
 	constructor() {
 		super({
@@ -57,13 +60,12 @@ export class Client extends Discord.Client {
 		});
 		
 		this.commands = new Discord.Collection();
+		this.sessions = new Discord.Collection();
 	}
 	
 	launch(): void {
-		const TOKEN = process.env.NODE_ENV === "production" ? process.env.PROD_TOKEN : process.env.DEV_TOKEN
-		
 		this.prepare();
-		this.login(TOKEN);
+		this.login(BotToken);
 	}
 	
 	prepare(): void {

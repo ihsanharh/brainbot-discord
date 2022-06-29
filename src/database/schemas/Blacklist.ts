@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose';
 
-interface Blocked {
+interface Blacklist {
 	id: string;
 	type: string;
 	reason: string;
@@ -9,7 +9,7 @@ interface Blocked {
 }
 
 export default model(
-	"blocked", new Schema<Blocked>({
+	"blacklist", new Schema<Blacklist>({
 		id: {
 			type: String,
 			required: true

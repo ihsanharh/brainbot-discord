@@ -1,16 +1,3 @@
-export const proxies = [
-	"http://jueuiqoj:dwb14l8j048g@45.140.13.119:9132",
-	"http://jueuiqoj:dwb14l8j048@45.142.28.83:8094",
-	"http://jueuiqoj:dwb14l8j048@45.136.231.85:7141",
-	"http://jueuiqoj:dwb14l8j048@45.136.231.43:7099",
-	"http://jueuiqoj:dwb14l8j048@45.142.28.20:8031",
-	"http://jueuiqoj:dwb14l8j048@45.140.13.112:9125",
-	"http://jueuiqoj:dwb14l8j048@45.136.228.85:6140",
-	"http://jueuiqoj:dwb14l8j048@45.140.13.124:9137",
-	"http://jueuiqoj:dwb14l8j048@45.142.28.145:8156",
-	"http://jueuiqoj:dwb14l8j048@45.137.60.112:6640"
-]
-
 export const agents = [
 	"Mozilla/5.0 (compatible; MSIE 8.0; Windows 95; Trident/4.0)",
 	"Mozilla/5.0 (Windows NT 5.2) AppleWebKit/5322 (KHTML, like Gecko) Chrome/38.0.846.0 Mobile Safari/5322",
@@ -23,6 +10,10 @@ export const agents = [
 	"Mozilla/5.0 (Windows NT 6.0; sl-SI; rv:1.9.0.20) Gecko/20171113 Firefox/37.0",
 	"Opera/8.50 (Windows NT 5.01; sl-SI) Presto/2.10.282 Version/12.00"
 ]
+
+export const BotToken: string = process.env.NODE_ENV === "production" ? process.env.PROD_TOKEN : process.env.DEV_TOKEN;
+export const InstanceFile = process.env.NODE_ENV === "production" ? "./dist/instance/Instance.js" : "./src/instance/Instance.ts";
+export const MainFile: string = process.env.NODE_ENV === "production" ? "./dist/brainbot.js" : "./src/brainbot.ts";
 
 export const BotLogsChannel: string = process.env.BOT_LOGS_CHANNEL;
 export const MessageLogsChannel: string = process.env.MESSAGE_LOGS_CHANNEL;

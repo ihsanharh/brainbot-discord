@@ -5,16 +5,13 @@ require("./utils/error");
 
 import { ShardingManager } from 'discord.js';
 
-import { ShardsCount } from "./utils/config"
+import { BotToken, MainFile, ShardsCount } from "./utils/config"
 import { AvatarUrl, sendDWebhook } from "./utils";
 import Colors from "./utils/colors";
 
-const TOKEN: string = process.env.NODE_ENV === "production" ? process.env.PROD_TOKEN : process.env.DEV_TOKEN;
-const MainFile: string = process.env.NODE_ENV === "production" ? "./dist/brainbot.js" : "./src/brainbot.ts";
-
 const manager = new ShardingManager(MainFile, {
 	respawn: true,
-	token: TOKEN
+	token: BotToken
 });
 
 manager.on('shardCreate', (shard: any) => {

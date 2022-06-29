@@ -1,12 +1,14 @@
 import { model, Schema } from 'mongoose';
 
 interface ProxyIn {
-	available?: boolean;
+	available: boolean;
 	banned?: boolean;
-	instance?: string;
 	ip_address?: string;
 	port?: string;
-	auth?: any;
+	auth: {
+		user: string;
+		password: string;
+	};
 }
 
 export default model(
@@ -19,10 +21,6 @@ export default model(
 		banned: {
 			type: Boolean,
 			default: false
-		},
-		instance: {
-			type: String,
-			default: "Unused"
 		},
 		ip_address: {
 			type: String,

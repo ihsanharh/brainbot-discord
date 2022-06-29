@@ -1,22 +1,26 @@
-import { connect } from 'mongoose';
+import { connect, connection } from 'mongoose';
 
 import { DatabaseSearch } from "../utils/interfaces";
-import Blocked from "./schemas/Blocked";
+import Blacklist from "./schemas/Blacklist";
 import Chat from "./schemas/Chat";
 import Proxys from "./schemas/Proxy";
+import Session from "./schemas/Session";
 
-export function connectToDatabase(): void {
+export function connectToDatabase() {
 	const DB_URI = process.env.NODE_ENV === "production" ? process.env.PROD_DATABASE_URI : process.env.DEV_DATABASE_URI
 	
-	connect(DB_URI).then(() => {}).catch((reason: any) => {
-		console.error(reason);
-	});
+	return connect(DB_URI)
+}
+
+export function disconnectFromDatabase() {
+	return connection.close();
 }
 
 export {
-	Blocked,
+	Blacklist,
 	Chat,
-	Proxys
+	Proxys,
+	Session
 }
 
 export default async (options: DatabaseSearch) => {
@@ -25,9 +29,10 @@ export default async (options: DatabaseSearch) => {
 	}
 	
 	const collections: collectionsIn = {
-		blocked: Blocked,
+		blacklist: Blacklist,
 		chat: Chat,
-		proxy: Proxys
+		proxy: Proxys,
+		session: Session
 	}
 	
 	const collection = collections[options.collection as keyof collectionsIn];
