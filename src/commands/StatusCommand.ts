@@ -19,7 +19,16 @@ export default class StatusCommand extends Command {
 	async execute(): Promise<any> {
 		if (this.slash) await this.command.deferReply();
 		
+		var botStatusInDB = await Database({
+			collection: "bot",
+			method: "find",
+			query: { id: this.client.user.id }
+		});
+		
 		var BotStatus: any = {
+			api: botStatusInDB.api.is,
+			database: botStatusInDB.database.is,
+			hosting: botStatusInDB.hosting.is,
 			ping: this.client.ws.ping,
 			uptime: countdown(Number((this.client.uptime / 1000).toFixed(0))),
 			proxy: {
@@ -55,15 +64,15 @@ export default class StatusCommand extends Command {
 			fields: [
 				{
 					name: "API",
-					value: `Operational`
+					value: BotStatus.api
 				},
 				{
 					name: "DATABASE",
-					value: `Operational`
+					value: BotStatus.database
 				},
 				{
 					name: "HOSTING",
-					value: `Operational`
+					value: BotStatus.hosting
 				},
 				{
 					name: "BOT",

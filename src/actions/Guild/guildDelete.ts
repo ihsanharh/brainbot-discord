@@ -1,7 +1,9 @@
 import { BotLogsChannel } from "../../utils/config";
+import BotStatusUpdater from "../../helpers/botStatus";
 import Emoji from "../../utils/emojis";
 
 export default async (guild: any, client: any) => {
+	BotStatusUpdater(client);
 	const LoggingChannel: any = await client.channels.fetch(BotLogsChannel, { force: true, allowUnknownGuild: true });
 	
 	if (LoggingChannel) {

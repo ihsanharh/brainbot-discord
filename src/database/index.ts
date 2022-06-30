@@ -2,6 +2,7 @@ import { connect, connection } from 'mongoose';
 
 import { DatabaseSearch } from "../utils/interfaces";
 import Blacklist from "./schemas/Blacklist";
+import Bot from "./schemas/Bot";
 import Chat from "./schemas/Chat";
 import Proxys from "./schemas/Proxy";
 import Session from "./schemas/Session";
@@ -18,6 +19,7 @@ export function disconnectFromDatabase() {
 
 export {
 	Blacklist,
+	Bot,
 	Chat,
 	Proxys,
 	Session
@@ -30,6 +32,7 @@ export default async (options: DatabaseSearch) => {
 	
 	const collections: collectionsIn = {
 		blacklist: Blacklist,
+		bot: Bot,
 		chat: Chat,
 		proxy: Proxys,
 		session: Session

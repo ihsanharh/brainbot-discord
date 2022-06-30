@@ -11,6 +11,7 @@ export const agents = [
 	"Opera/8.50 (Windows NT 5.01; sl-SI) Presto/2.10.282 Version/12.00"
 ]
 
+export const BotId: string = process.env.NODE_ENV === "production" ? process.env.PROD_CLIENT_ID : process.env.DEV_CLIENT_ID;
 export const BotToken: string = process.env.NODE_ENV === "production" ? process.env.PROD_TOKEN : process.env.DEV_TOKEN;
 export const InstanceFile = process.env.NODE_ENV === "production" ? "./dist/instance/Instance.js" : "./src/instance/Instance.ts";
 export const MainFile: string = process.env.NODE_ENV === "production" ? "./dist/brainbot.js" : "./src/brainbot.ts";

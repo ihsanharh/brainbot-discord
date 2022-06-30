@@ -1,9 +1,11 @@
 import { DefaultPrefix } from "../../utils"
 import { BotLogsChannel } from "../../utils/config";
+import BotStatusUpdater from "../../helpers/botStatus";
 import Database from "../../database";
 import Emoji from "../../utils/emojis";
 
 export default async (guild: any, client: any) => {
+	BotStatusUpdater(client);
 	const LoggingChannel: any = await client.channels.fetch(BotLogsChannel, { force: true, allowUnknownGuild: true });
 	const clientCommands = client.commands.filter((c: any) => !c.permission.author.includes("OWNER"));
 	const GetGuildData = await Database({
