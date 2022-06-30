@@ -21,16 +21,16 @@ let content = message.content.toLowerCase().replace(/brainbot|brain bot/g, "Clev
 parentPort.postMessage(JSON.stringify({ t: "LAST_MESSAGE_UPDATE", s: session, d: message }));
 
 chat(content).then((response: any) => {
-	parentPort.postMessage(JSON.stringify({ t: "CONTEXT_UPDATE", s: session, d: { content: content, response: response } }))
 	response = response.toLowerCase().replace(/cleverbot|clever bot/g, "Brain Bot");
 	
 	triggerTypingIndicator();
 	setTimeout(() => {
 		reply({ content: `${response}` }).then((DiscordMessage: any) => {
-			parentPort.postMessage(JSON.stringify({ t: "SESSION_ACK", s: session, d: {} }))
+			parentPort.postMessage(JSON.stringify({ t: "SESSION_ACK", s: session, d: { content: content, response: response } }))
 		});
 	}, response.length * 250);
-}).catch(() => {
+}).catch((error) => {
+	console.error(error);
 	reply({ content: `\`\`\`\nOh no! something went wrong, Please try again in a few minutes.\`\`\`` });
 })
 

@@ -97,8 +97,6 @@ export default async (message: any, client: any) => {
 	worker.on('message', (wmessage: any) => {
 		wmessage = JSON.parse(wmessage);
 		
-		if (wmessage.t === "CONTEXT_UPDATE") handleContextUpdate(wmessage);
-		
 		if (wmessage.t === "LAST_MESSAGE_UPDATE") handleLastMessageUpdate(wmessage);
 		
 		if (wmessage.t === "SESSION_ACK") handleSessionAck(client, wmessage);
@@ -109,7 +107,7 @@ export default async (message: any, client: any) => {
 	});
 }
 
-export async function handleContextUpdate(value: any): Promise<void> {
+export async function handleLastMessageUpdate(value: any): Promise<void> {
 	await Database({
 		collection: "session",
 		method: "update",
@@ -117,17 +115,7 @@ export async function handleContextUpdate(value: any): Promise<void> {
 		values: {
 			$push: { context: {
 				$each: [value.d.content, value.d.response]
-			}}
-		}
-	});
-}
-
-export async function handleLastMessageUpdate(value: any): Promise<void> {
-	await Database({
-		collection: "session",
-		method: "update",
-		query: { _id: value.s._id },
-		values: {
+			}},
 			$set: { lastMessage: value.d }
 		}
 	})
