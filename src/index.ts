@@ -8,6 +8,7 @@ import { ShardingManager } from 'discord.js';
 import { BotToken, MainFile, ShardsCount } from "./utils/config"
 import { AvatarUrl, sendDWebhook } from "./utils";
 import Colors from "./utils/colors";
+import Emojis from "./utils/emojis";
 
 const manager = new ShardingManager(MainFile, {
 	respawn: true,
@@ -21,7 +22,7 @@ manager.on('shardCreate', (shard: any) => {
 		sendDWebhook({
 			embeds: [
 				{
-					description: `<:message:889864012060303431> **Shard ${shard.id}** process was exited.`,
+					description: `${Emojis["message"]} **Shard ${shard.id}** process was exited.`,
 					color: Colors["red.Status"],
 					footer: {
 						text: `${shard.manager.shards.size}/${shard.manager.totalShards}`
@@ -39,7 +40,7 @@ manager.on('shardCreate', (shard: any) => {
 		sendDWebhook({
 			embeds: [
 				{
-					description: `<:message:889864012060303431> **Shard ${shard.id}** has been spawned.`,
+					description: `${Emojis["message"]} **Shard ${shard.id}** has been spawned.`,
 					color: Colors["green.Success"],
 					footer: {
 						text: `${shard.manager.shards.size}/${shard.manager.totalShards}`
