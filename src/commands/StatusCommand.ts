@@ -1,5 +1,3 @@
-import ms = require('ms');
-
 import { countdown } from "../utils";
 import Command from "../base/Command";
 import Database from "../database";
