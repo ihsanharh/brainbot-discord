@@ -98,7 +98,6 @@ export default async (message: any, client: any) => {
 		wmessage = JSON.parse(wmessage);
 		
 		if (wmessage.t === "LAST_MESSAGE_UPDATE") handleLastMessageUpdate(wmessage);
-		
 		if (wmessage.t === "SESSION_ACK") handleSessionAck(client, wmessage);
 	});
 	
@@ -113,15 +112,26 @@ export async function handleLastMessageUpdate(value: any): Promise<void> {
 		method: "update",
 		query: { _id: value.s._id },
 		values: {
-			$push: { context: {
-				$each: [value.d.content, value.d.response]
-			}},
 			$set: { lastMessage: value.d }
 		}
 	})
 }
 
-export function handleSessionAck(client: any, value: any): void {
+export async function handleSessionAck(client: any, value: any): Promise<void> {
+	await Database({
+		collection: "session",
+		method: "update",
+		query: { _id: value.s._id },
+		values: {
+			$push: { context: {
+				$each: [
+					value.d.content,
+					value.d.response
+				]
+			} }
+		}
+	})
+	
 	setTimeout(() => {
 		Database({
 			collection: "session",
