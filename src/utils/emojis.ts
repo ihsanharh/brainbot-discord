@@ -14,6 +14,7 @@ export default {
 	"PARTNERED_SERVER_OWNER":"<:partner:949245657615577088>",
 	"VERIFIED_BOT": "<:BOT_1:949249961793568789><:BOT_2:949250016961232947>",
 	
+	"BrainBot": "<:brainbot:992352663779946536>",
 	
 	"announcement": "<:announcement:889862572696829993>",
 	"chat": "<:chat:889862837936222229>",
