@@ -18,6 +18,7 @@ function AddToCooldown(id: string | number, timeout: number = 3600): void {
 
 export default async (message: any, client: any) => {
 	if (message.author.bot) return;
+	if (message.content.startsWith(message.prefix)) return;
 	if (message.guild) {
 		var GuildData = await Database({
 			collection: "chat",
@@ -40,7 +41,6 @@ export default async (message: any, client: any) => {
 		
 		if (checkPerms.length >= 1) return;
 		if (message.channel.id !== channel.id) return;
-		if (message.content.startsWith(message.prefix)) return;
 	}
 	
 	var UserSession = client.sessions.get(message.author.id);
