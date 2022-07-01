@@ -26,9 +26,9 @@ export default class StatusCommand extends Command {
 		});
 		
 		var BotStatus: any = {
-			api: botStatusInDB.api.is,
-			database: botStatusInDB.database.is,
-			hosting: botStatusInDB.hosting.is,
+			api: botStatusInDB.status.api.is,
+			database: botStatusInDB.status.database.is,
+			hosting: botStatusInDB.status.hosting.is,
 			ping: this.client.ws.ping,
 			uptime: countdown(Number((this.client.uptime / 1000).toFixed(0))),
 			proxy: {
