@@ -1,6 +1,6 @@
 {
   "name": "brainbot",
-  "version": "2.2.6",
+  "version": "2.2.8",
   "description": "Brain Bot discord",
   "main": "dist/index",
   "scripts": {
