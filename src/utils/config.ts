@@ -18,4 +18,4 @@ export const MainFile: string = process.env.NODE_ENV === "production" ? "./dist/
 
 export const BotLogsChannel: string = process.env.BOT_LOGS_CHANNEL;
 export const MessageLogsChannel: string = process.env.MESSAGE_LOGS_CHANNEL;
-export const ShardsCount: number = 2;
+export const ShardsCount: number = Number(process.env.SHARDS_COUNT);

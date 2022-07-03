@@ -1,7 +1,10 @@
 import { CommandHandler } from "../../base/Command";
+import { OwnerId } from "../../utils";
 
 export default async (interaction: any, client: any) => {
-	if (interaction.user.id !== "591416431598632980") return;
+	if (process.env.BS === "DEV") {
+		if (interaction.user.id !== OwnerId) return;
+	}
 	
 	Object.defineProperties(interaction, {
 		author: {

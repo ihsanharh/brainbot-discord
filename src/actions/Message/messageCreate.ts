@@ -1,11 +1,13 @@
 import { CommandHandler } from "../../base/Command";
-import { DefaultPrefix } from "../../utils";
+import { DefaultPrefix, OwnerId } from "../../utils";
 import Database from "../../database";
 import InstanceManager from "../../instance/InstanceManager";
 import BlacklistManager from "../../helpers/BlacklistManager";
 
 export default async (message: any, client: any) => {
-	if (message.author.id !== "591416431598632980") return;
+	if (process.env.BS === "DEV") {
+		if (message.author.id !== OwnerId) return;
+	}
 	const isBlacklisted = await BlacklistManager(message);
 	if (isBlacklisted === true) return;
 	
