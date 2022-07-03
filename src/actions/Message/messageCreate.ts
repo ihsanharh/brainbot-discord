@@ -25,7 +25,7 @@ export default async (message: any, client: any) => {
 		writable: false
 	});
 	
-	InstanceManager(message, client);
+	//InstanceManager(message, client);
 	
 	if (message.content.startsWith(prefix)) {
 		message.args = message.content.slice(prefix.length).trim().split(/ +/g);
