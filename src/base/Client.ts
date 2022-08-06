@@ -1,15 +1,15 @@
-import * as Discord from 'discord.js';
+import * as DiscordJS from 'discord.js';
 import * as fs from 'fs';
 
 import { BotToken } from "../utils/config";
 
-export class Client extends Discord.Client {
-	public commands: Discord.Collection<string | number, any>;
-	public sessions: Discord.Collection<string | number, any>;
+export default class Client extends DiscordJS.Client {
+	public commands: DiscordJS.Collection<string, any>;
+	public sessions: DiscordJS.Collection<string | number, any>;
 	
 	constructor() {
 		super({
-			makeCache: Discord.Options.cacheWithLimits({
+			makeCache: DiscordJS.Options.cacheWithLimits({
 					/**
 					 * Unsupported manager to be limited according to discord.js.org:
 					 * - GuildManager
@@ -59,8 +59,8 @@ export class Client extends Discord.Client {
 			}
 		});
 		
-		this.commands = new Discord.Collection();
-		this.sessions = new Discord.Collection();
+		this.commands = new DiscordJS.Collection();
+		this.sessions = new DiscordJS.Collection();
 	}
 	
 	launch(): void {
