@@ -1,20 +1,19 @@
 import { DefaultPrefix } from "../../utils"
 import { BotLogsChannel } from "../../utils/config";
+import { getGuildsCount } from "../../utils/functions";
 import BotStatusUpdater from "../../helpers/botStatus";
 import Database from "../../database";
 import Emoji from "../../utils/emojis";
 
 export default async (guild: any, client: any) => {
 	BotStatusUpdater(client);
+	
 	const LoggingChannel: any = await client.channels.fetch(BotLogsChannel, { force: true, allowUnknownGuild: true });
-	const clientCommands = client.commands.filter((c: any) => !c.permission.author.includes("OWNER"));
 	const GetGuildData = await Database({
 		collection: "chat",
 		method: "find",
 		query: { _id: guild.id }
 	});
-	
-	guild.commands.set(clientCommands);
 	
 	guild.channels.fetch().then(async (GuildChannels: any) => {
 		const filterChannel = GuildChannels.filter((channel: any) => channel.type === "GUILD_TEXT" && channel.permissionsFor(client.user).has(["SEND_MESSAGES", "VIEW_CHANNEL"]));
@@ -43,7 +42,7 @@ export default async (guild: any, client: any) => {
 	});
 	
 	if (LoggingChannel) {
-		const GuildsCount = (await client.shard.fetchClientValues("guilds.cache.size")).reduce((prev: any, val: any) => prev + val, 0);
+		const GuildsCount = await getGuildsCount(client);
 		
 		LoggingChannel.send({ content: `${Emoji["join"]} has been added to **${guild?.name}\n[${GuildsCount}]**` });
 	}

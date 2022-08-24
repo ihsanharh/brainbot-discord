@@ -1,12 +1,6 @@
 import { WebhookClient } from 'discord.js';
 
-export function replaceAll(text: string, variable: any) {
-	var re = new RegExp(Object.keys(variable).join("|"),"gi");
-	
-	return text.replace(re, function(matched) {
-		return variable[matched.toLowerCase()];
-	});
-}
+import Emojis from "./emojis";
 
 export function countdown(s: number) {
 	const d = Math.floor(s / (3600 * 24));
@@ -42,8 +36,24 @@ export function cutString(Text: string, length: number) {
 	return Text + "...";
 }
 
+export async function getGuildsCount(client: any): Promise<number | string> {
+	return client?.shard ? (await this.client?.shard?.fetchClientValues("guilds.cache.size")).reduce((prev: any, val: any) => prev + val, 0) : client?.guilds?.cache?.size;
+}
+
 export function sendDWebhook(data: any, webhook: string): void {
 	const WebHook = new WebhookClient({ url: webhook });
 	
 	WebHook.send(data);
+}
+
+export function replaceAll(text: string, variable: any) {
+	var re = new RegExp(Object.keys(variable).join("|"),"gi");
+	
+	return text.replace(re, function(matched) {
+		return variable[matched.toLowerCase()];
+	});
+}
+
+export const separateEmoji = (emoji: string) => {
+	return Emojis[emoji as keyof typeof Emojis].replace(/<|>/g, "").split(":").filter((item: string) => item);
 }
