@@ -1,6 +1,13 @@
-import BotStatusUpdater from "../../helpers/botStatus";
+import { Client } from 'discord.js';
 
-export default async (client: any) => {
-	console.log(`[Shard ${client.shard.ids[0]}] ${client.user.username} is ${client?.user?.presence?.status}.`);
+import BotStatusUpdater, { CleanUp } from "../../helpers/botStatus";
+
+export default (client: Client): void => {
 	BotStatusUpdater(client);
+	CleanUp();
+	
+	const ShardId: number = client?.shard?.ids[0] ?? 0;
+	const BotStatus = client?.user?.presence?.status;
+	
+	console.log(`[Shard ${ShardId}] ${client?.user?.username} is ${BotStatus}.`);
 }
