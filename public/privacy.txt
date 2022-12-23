@@ -1,0 +1,22 @@
+Privacy Policy
+==========
+
+Effective Date: April 20, 2022
+
+# What personal information do we collect from the people that use Brain Bot?
+-------------------------
+• Public information about your Discord server. This is the id of the channel that you set for Brain Bot.
+
+• Your message. The content of every message you sent to Brain Bot.
+
+# How i use your data?
+-------------------
+I use the collected information about your message content for learning purposes, and we store them in a pool of replies that Brain Bot will use to reply to you in the future. Also, I use the stored Channel ID to match with the Channel ID where messages are received. If it matches the stored Channel ID, then Brain Bot will reply to you. So Brain Bot will only talk in that channel.
+
+# How can I contact you if I have concerns about your bot?
+---------------
+You can contact me by email: mschodeihsan@gmail.com
+
+# How can I request that data be removed?
+---------------
+You can do that by running /delete command in your discord server. Once you run that command all data, including channel id, will be deleted from Brain Bot database.

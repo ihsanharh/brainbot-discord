@@ -1,0 +1,12 @@
+.env
+i
+build
+start-gateway-bot
+start-server
+
+chat/node_modules
+chat/package-lock.json
+gateway/build
+server/node_modules
+server/dist
+server/package-lock.json
