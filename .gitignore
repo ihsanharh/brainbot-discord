@@ -1,4 +1,5 @@
 .env
+set-env
 i
 build
 start-gateway-bot

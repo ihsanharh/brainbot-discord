@@ -10,8 +10,8 @@ namespace brainbot
 		static uint32_t Enabled_GatewayIntents       = dpp::i_default_intents | dpp::i_message_content;
 		static uint32_t Shard_Count                  = 2;
 		static const std::string Token               = std::getenv("BRAIN_BOTD_TOKEN");
-		static const std::string ServerRsa           = "ZL2iE2E9GC8uVpZKL4NbHlvWNlt9xSnAKCipGYaHylAWXkvGtWNdFbf7p1f8p6lM";
-		static const std::string ChatRsa             = "SlG6iZeGiSdAaPAZ3olm3ZoTQ04V9N5J";
+		static const std::string ServerRsa           = std::getenv("SERVER_RSA");
+		static const std::string ChatRsa             = std::getenv("CHATTER_RSA");
 	}
 	
 	namespace Emojis
@@ -22,7 +22,10 @@ namespace brainbot
 	
 	namespace Utils
 	{
-		static const std::string join_leave_channel  = "871378259504431114";
+		static const std::string discord_app_id      = std::getenv("DISCORD_APP_ID");
+		static const std::string join_leave_channel  = std::getenv("JOIN_LEAVE_CHANNEL");
+		static const std::string server_url          = std::getenv("SERVER_URL");
+		static const std::string chatter_url         = std::getenv("CHATTER_URL");
 	}
 	
 	namespace Message
