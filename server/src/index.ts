@@ -7,8 +7,6 @@ import * as mongoose from 'mongoose';
 
 import routes from "./routes";
 import { DatabaseUrl, ServerPort } from "./utils/config";
-import { getGuildMember, getGuildMemberPermissionsForChannel } from "./utils/functions";
-import { APIGuildMember } from "./typings";
 import { Express, Response, Request, NextFunction } from 'express';
 
 const App: Express = express();
