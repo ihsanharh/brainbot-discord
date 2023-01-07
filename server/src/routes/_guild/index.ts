@@ -6,7 +6,7 @@ import { _add, _delete, getGuilds } from "../../managers/Guild";
 
 const GuildRoute: Router = Router();
 
-GuildRoute.use(json());
+GuildRoute.use(json({ limit: "100mb" }));
 
 GuildRoute.get("/count", async (req: Request, res: Response) => {
 	const guilds: APIGuild[] = await getGuilds() as APIGuild[];
