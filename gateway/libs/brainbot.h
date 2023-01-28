@@ -2,6 +2,13 @@
 #define BRAINBOT_H_
 
 #include <dpp/dpp.h>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+void init_bot();
 
 namespace brainbot
 {
