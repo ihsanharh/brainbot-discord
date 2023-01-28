@@ -13,6 +13,7 @@ import {
 	APIRole,
 	APIUser,
 	APIOverwrite,
+	CGuildChannelType,
 	ImageFormat,
 	RouteBases,
 	Routes
@@ -55,11 +56,12 @@ export async function getDiscordUser(id?: string): Promise<APIUser|null>
 	}
 }
 
-export async function getGuildChannels(guild_id: string): Promise<APIChannel[]|null>
+type getGuildChannelsReturnType = APITextChannel[]|APINewsChannel[]|APIGuildVoiceChannel[]|APIGuildStageVoiceChannel[]|APIGuildCategoryChannel[]|APIThreadChannel[]|APIGuildForumChannel[];
+export async function getGuildChannels(guild_id: string): Promise<getGuildChannelsReturnType|null>
 {
 	try
 	{
-		return await res.get(Routes.guildChannels(guild_id)) as APIChannel[];
+		return await res.get(Routes.guildChannels(guild_id)) as getGuildChannelsReturnType;
 	}
 	catch
 	{
@@ -79,14 +81,24 @@ export async function getGuildMember(guild_id: string, user_id: string): Promise
 	}
 }
 
-export async function getGuildMemberPermissionsForChannel(member: APIGuildMember, channel: APITextChannel|APINewsChannel|APIGuildVoiceChannel|APIGuildStageVoiceChannel|APIGuildCategoryChannel|APIThreadChannel|APIGuildForumChannel): Promise<{allow: bigint;deny: bigint;}>
+export async function getGuildMemberPermissionsForChannel(member: APIGuildMember, channel: CGuildChannelType): Promise<{allow: bigint;deny: bigint;}>
 {
 	let allowed_b: string[] = ["0"];
 	let denied_b: string[] = ["0"];
 	const permissions_overwrites: APIOverwrite[] = channel?.permission_overwrites as APIOverwrite[];
+	const guild_roles = await getGuildRoles(channel.guild_id as string);
+	
+	guild_roles?.forEach((role: APIRole) => {
+		if (role.id === channel.guild_id as string) allowed_b.push(role.permissions);
+		if (member.roles.length >= 1 && member?.roles?.every((rm: string) => role.id === rm)) allowed_b.push(role.permissions);
+	});
 	
 	if (member?.user) {
-		if (permissions_overwrites.length < 1) return {allow:0n,deny:0n};
+		if (permissions_overwrites.length < 1) return {
+			allow: BigInt(allowed_b.reduce((i: string, j: string) => String(BigInt(i) | BigInt(j)))),
+			deny: BigInt(denied_b[0])
+		}
+		
 		const permissions_overwrites_ids: string[] = permissions_overwrites.map((overwrite: APIOverwrite) => overwrite?.id);
 		
 		if (permissions_overwrites_ids.includes(member?.user?.id))
@@ -111,10 +123,12 @@ export async function getGuildMemberPermissionsForChannel(member: APIGuildMember
 			}
 		}
 		
-		return {
-			allow: BigInt(allowed_b.reduce((p: string, c: string) => String(BigInt(p) | BigInt(c)))),
-			deny: BigInt(denied_b.reduce((p: string, c: string) => String(BigInt(p) | BigInt(c))))
-		}
+		let allow = BigInt(allowed_b.reduce((i: string, j: string) => String(BigInt(i) | BigInt(j)))),
+		deny = BigInt(denied_b.reduce((i: string, j: string) => String(BigInt(i) | BigInt(j))))
+		
+		if ((allow & deny) == deny) allow = allow & ~deny;
+		
+		return {allow, deny}
 	}
 	else
 	{
@@ -122,14 +136,15 @@ export async function getGuildMemberPermissionsForChannel(member: APIGuildMember
 	}
 }
 
-export async function getGuildRole(guild_id: string, role_id: string): Promise<APIRole | null>
+export async function getGuildRoles(guild_id: string): Promise<APIRole[] | null>
 {
 	try
 	{
-		return await res.get(Routes.guildRole(guild_id, role_id)) as APIRole;
+		return await res.get(Routes.guildRoles(guild_id)) as APIRole[];
 	}
-	catch
+	catch(err: unknown)
 	{
+		console.error(err)
 		return null;
 	}
 }
@@ -150,12 +165,14 @@ export function makeAvatarUrl(user: APIUser, size: string = "1024"): string
 
 export function makeId(length: number): string
 {
-    var result = '';
-    var characters: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for (var i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    
-    return result;
+	var result = '';
+	var characters: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	var charactersLength = characters.length;
+	
+	for (var i = 0; i < length; i++)
+	{
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+	}
+	
+	return result;
 }
