@@ -3,6 +3,7 @@ import { Request, Response, Router, json } from 'express';
 import { APIGuild, HttpStatusCode } from "../../typings";
 import { verifyPrivateRouting } from "../../utils/middleware";
 import { _add, _delete, getGuilds } from "../../managers/Guild";
+import { getGuildChannels, getGuildMember, getGuildMemberPermissionsForChannel } from "../../utils/functions";
 
 const GuildRoute: Router = Router();
 
@@ -24,6 +25,39 @@ GuildRoute.post("/create", verifyPrivateRouting, async (req: Request, res: Respo
 GuildRoute.delete("/remove", verifyPrivateRouting, async (req: Request, res: Response) => {
 	_delete(req.body.id);
 	return res.status(HttpStatusCode.OK).end();
-})
+});
+
+GuildRoute.get("/:guild_id/channels", verifyPrivateRouting, async (req: Request, res: Response) => {
+	const { guild_id } = req.params;
+	const { permissionsfor } = req.query;
+	
+	if (!guild_id) return res.status(HttpStatusCode.BAD_REQUEST).json({ "message": `${HttpStatusCode.BAD_REQUEST} Invalid request` });
+	
+	const channel_list = await getGuildChannels(guild_id);
+	if (!channel_list) return res.status(HttpStatusCode.NOT_FOUND).json({ "message": `${HttpStatusCode.NOT_FOUND} No channels found for this guild.` });
+	
+	if (permissionsfor)
+	{
+		const asGuildMember = await getGuildMember(guild_id, permissionsfor as string);
+		
+		if (asGuildMember)
+		{
+			for (let i = 0; i < channel_list.length; i++)
+			{
+				const perms = await getGuildMemberPermissionsForChannel(asGuildMember, channel_list[i]);
+				
+				Object.defineProperty(channel_list[i], "req_user_permissions", {
+					enumerable: true,
+					value: {
+						"allow": String(perms.allow),
+						"deny": String(perms.deny)
+					}
+				});
+			}
+		}
+	}
+	
+	return res.status(HttpStatusCode.OK).json(JSON.parse(JSON.stringify(channel_list)));
+});
 
 export { GuildRoute };
