@@ -1,6 +1,6 @@
 import { Request, Response, Router, json } from 'express';
 
-import { APIGuild, HttpStatusCode } from "../../typings";
+import { APIGuild, GuildCD, HttpStatusCode } from "../../typings";
 import { verifyPrivateRouting } from "../../utils/middleware";
 import { _add, _delete, getGuilds } from "../../managers/Guild";
 import { getGuildChannels, getGuildMember, getGuildMemberPermissionsForChannel } from "../../utils/functions";
@@ -18,12 +18,14 @@ GuildRoute.get("/count", async (req: Request, res: Response) => {
 });
 
 GuildRoute.post("/create", verifyPrivateRouting, async (req: Request, res: Response) => {
-	_add(req.body as APIGuild);
+	const created: GuildCD = JSON.parse(JSON.stringify(req.body));
+	_add(created);
 	return res.status(HttpStatusCode.OK).end();
 });
 
 GuildRoute.delete("/remove", verifyPrivateRouting, async (req: Request, res: Response) => {
-	_delete(req.body.id);
+	const deleted: GuildCD = JSON.parse(JSON.stringify(req.body));
+	_delete(deleted);
 	return res.status(HttpStatusCode.OK).end();
 });
 

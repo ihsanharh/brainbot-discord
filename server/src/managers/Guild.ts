@@ -1,17 +1,17 @@
-import { APIGuild, Routes } from "../typings";
+import { APIGuild, GuildCD, Routes } from "../typings";
 import { res } from "../utils/res";
 import { DiscordAppId } from "../utils/config";
 
-export const GuildsCache: Map<string, APIGuild> = new Map<string, APIGuild>();
+export const GuildsCache: Map<string, string> = new Map<string, string>();
 
-export async function _add(guild: APIGuild): Promise<void>
+export async function _add(guild: GuildCD): Promise<void>
 {
-	GuildsCache.set(guild.id, guild);
+	GuildsCache.set(guild.id, guild.guild as string);
 }
 
-export async function _delete(guild_id: string): Promise<void>
+export async function _delete(guild: GuildCD): Promise<void>
 {
-	GuildsCache.delete(guild_id);
+	GuildsCache.delete(guild.id);
 }
 
 export async function getGuilds(): Promise<APIGuild[]|null>
@@ -20,12 +20,12 @@ export async function getGuilds(): Promise<APIGuild[]|null>
 	{
 		if (GuildsCache.size >= 1)
 		{
-			return Array.from(GuildsCache.values()) as APIGuild[];
+			return Array.from(GuildsCache.values()).map((str_guild: string) => JSON.parse(str_guild)) as APIGuild[];
 		}
 		else
 		{
 			const guilds = await res.get(Routes.userGuilds()) as APIGuild[];
-			guilds.forEach((guild: APIGuild) => GuildsCache.set(guild.id, guild));
+			guilds.forEach((guild: APIGuild) => GuildsCache.set(guild.id, JSON.stringify(guild)));
 			
 			return guilds;
 		}
