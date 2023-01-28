@@ -5,11 +5,20 @@ import {
 	APIMessage,
 	APIPartialChannel,
 	APIRole,
+	APITextChannel,
+	APINewsChannel,
+	APIGuildVoiceChannel,
+	APIGuildStageVoiceChannel,
+	APIGuildCategoryChannel,
+	APIThreadChannel,
+	APIGuildForumChannel,
 	APIUser
 } from 'discord-api-types/v10';
 
 export * from 'discord-api-types/v10';
 export * from "./utils/types";
+
+export type CGuildChannelType = APITextChannel|APINewsChannel|APIGuildVoiceChannel|APIGuildStageVoiceChannel|APIGuildCategoryChannel|APIThreadChannel|APIGuildForumChannel;
 
 export interface CollectorData
 {
