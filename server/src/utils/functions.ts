@@ -21,6 +21,32 @@ import {
 import { res } from "./res";
 import { DiscordAppId } from "./config";
 
+export function abtob64(buffer: ArrayBuffer): string
+{
+	var binary = '';
+	var bytes = new Uint8Array(buffer);
+	var len = bytes.byteLength;
+	for (var i = 0; i < len; i++)
+	{
+		binary += String.fromCharCode(bytes[i]);
+	}
+	
+	return btoa(binary);
+}
+// https://stackoverflow.com/a/38858127 both up and down
+export function b64toab(base64: string): ArrayBuffer
+{
+	var binary_string = atob(base64);
+	var len = binary_string.length;
+	var bytes = new Uint8Array(len);
+	for (var i = 0; i < len; i++)
+	{
+		bytes[i] = binary_string.charCodeAt(i);
+	}
+	
+	return bytes.buffer;
+}
+
 export function colourInt(code: string): number
 {
 	if (code === 'RANDOM') return Math.floor(Math.random() * (0xffffff + 1));
@@ -90,7 +116,7 @@ export async function getGuildMemberPermissionsForChannel(member: APIGuildMember
 	
 	guild_roles?.forEach((role: APIRole) => {
 		if (role.id === channel.guild_id as string) allowed_b.push(role.permissions);
-		if (member.roles.length >= 1 && member?.roles?.every((rm: string) => role.id === rm)) allowed_b.push(role.permissions);
+		if (member.roles.length >= 1 && member?.roles?.includes(role.id)) allowed_b.push(role.permissions);
 	});
 	
 	if (member?.user) {

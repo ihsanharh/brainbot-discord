@@ -1,13 +1,26 @@
 /* SSL support for httplib.h */
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 
-#include "libs/HttpStatusCodes_C++11.h"
-#include "libs/brainbot.h"
-#include "libs/httplib.h"
-#include "libs/nlohmann/json.hpp"
+#include "libs/HttpStatusCodes_C++11.h" // HttpStatus
+#include "libs/brainbot.h" // brainbot
+#include "libs/httplib.h" // httplib
+#include "libs/nlohmann/json.hpp" // nlohmann
+
+#include <dpp/dpp.h> // dpp
+#include <algorithm> // copy_if find
+#include <chrono> // chrono
+#include <cstdlib> // getenv
+#include <iterator> // back_inserter
+#include <iostream> // cout endl get
+#include <string> // string to_string stoull
+#include <thread> // thread
+#include <unordered_map> // unordered_map
+#include <vector> // vector
 
 // bot variables for discord connection
 int app_state;
+std::chrono::time_point<std::chrono::system_clock> expected_guilds_out;
+
 const std::string BotToken = brainbot::Config::Token;
 uint32_t enabled_intents = brainbot::Config::Enabled_GatewayIntents;
 uint32_t shards_count = brainbot::Config::Shard_Count;
@@ -23,12 +36,29 @@ httplib::Client discord_Api("https://discord.com");
 // check the guilds availability
 void check_ready()
 {
+	std::chrono::time_point<std::chrono::system_clock> out_now = std::chrono::system_clock::now();
+	std::chrono::duration is_thirty_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(out_now - expected_guilds_out);
+	
 	if (Expected_Guilds.empty())
 	{ // if the expected guilds map empty clear it to free memory
-		std::cout << "[Expected_Guilds] " << "All guilds is now available." << std::endl;
 		Expected_Guilds.clear();
-		app_state = 1;
+		app_state = 1; // 1: Brain Bot is fully ready.
+		std::cout << "[Var Expected_Guilds] All guilds is now available." << std::endl;
+	} else if (is_thirty_seconds.count() >= 30000)
+	{
+		app_state = 2; // 2: Brain Bot is ready while there's unavailable guilds.
+		std::cout << "[Var Expected_Guilds] There are " << Expected_Guilds.size() << " unavailable guilds." << std::endl;
 	}
+}
+
+void post_chat(nlohmann::json& message)
+{
+	httplib::Client chat_server(brainbot::Utils::chatter_url);
+	httplib::Headers req_headers = {
+		{ "Authorization", brainbot::Config::ChatRsa }
+	};
+	
+	chat_server.Post("/_mafi", req_headers, message.dump(), "application/json");
 }
 
 // send log message to support server when the bot gets added to or kicked from a server
@@ -38,7 +68,7 @@ void alert_join_leave(const std::string& message)
 		if (res.is_error())
 		{
 			// if error
-			std::cout << res.get_error().message << std::endl;
+			std::cout << "[Func alert_join_leave] error: " << res.get_error().message << std::endl;
 		}
 		else
 		{
@@ -58,11 +88,10 @@ void alert_join_leave(const std::string& message)
 // say hi and thanks message to the new server
 void send_hi_message(const std::string& guildId)
 {
-	bot.request((std::string)brainbot::Utils::server_url+"/_guild/"+(std::string)guildId+"/channels?permissionsfor="+std::to_string(bot.me.id), dpp::http_method::m_get, [guildId](const dpp::http_request_completion_t& res) {
+	bot.request(static_cast<std::string>(brainbot::Utils::server_url)+"/_guild/"+static_cast<std::string>(guildId)+"/channels?permissionsfor="+std::to_string(bot.me.id), dpp::http_method::m_get, [guildId](const dpp::http_request_completion_t& res) {
 		if (res.status == HttpStatus::toInt(HttpStatus::Code::OK))
 		{
 			nlohmann::json channel_list = nlohmann::json::parse(res.body);
-			
 			nlohmann::json text_channels;
 			std::copy_if(channel_list.begin(), channel_list.end(), std::back_inserter(text_channels), [](const nlohmann::json& channel) {
 				uint64_t perms_in_this_channel = std::stoull((std::string)channel["req_user_permissions"]["allow"]);
@@ -70,7 +99,6 @@ void send_hi_message(const std::string& guildId)
 				
 				return channel["type"] == 0 && is_granted;
 			});
-			
 			// if there's text channel equal to or greater than 1 then continue otherwise don't do anything 
 			if (text_channels.size() >= 1)
 			{
@@ -78,27 +106,24 @@ void send_hi_message(const std::string& guildId)
 				nlohmann::json first_channel_in_guild = text_channels[0];
 				// here we're checking if the bot ever added to this server before or not by
 				// doing a get request to api server to get the guild data in bot database
-				bot.request((std::string)brainbot::Utils::server_url+(std::string)"/database/guild/"+guildId, dpp::http_method::m_get, [first_channel_in_guild](const dpp::http_request_completion_t& res) {
+				bot.request(static_cast<std::string>(brainbot::Utils::server_url)+"/database/guild/"+guildId, dpp::http_method::m_get, [first_channel_in_guild](const dpp::http_request_completion_t& res) {
 					std::string content = "";
 					
 					if (res.status == HttpStatus::toInt(HttpStatus::Code::OK))
 					{
 						const nlohmann::json json_guild_data = nlohmann::json::parse(res.body);
 						content = brainbot::Message::AddedBack;
-						
 						// if the chat bot channel in database for this guild is not set then assign setup message
 						if (json_guild_data["channel"].is_null()) content += brainbot::Message::SetupFirstTime;
 						else
 						{
 							std::string ContinueTalking = brainbot::Message::ContinueTalking;
 							const std::string& stored_channel_id = json_guild_data["channel"]; // extract the channel
-							
 							// check if the stored channel is still exist on discord
 							httplib::Result is_stored_channel_exist = discord_Api.Get((std::string)"/api/v10/channels/"+stored_channel_id, {
 								{ "Accept", "application/json" },
 								{ "Authorization", "Bot "+BotToken }
 							});
-							
 							// if the channel exist assign continue talking otherwise assign setup message
 							if (is_stored_channel_exist && is_stored_channel_exist->status == HttpStatus::toInt(HttpStatus::Code::OK)) content += ContinueTalking.replace(ContinueTalking.find("<#cid>"), std::string("<#cid>").size(), stored_channel_id);
 							else content += brainbot::Message::SetupFirstTime;
@@ -115,7 +140,6 @@ void send_hi_message(const std::string& guildId)
 					bot.request((std::string)brainbot::Utils::server_url+"/_commands", dpp::http_method::m_get, [first_channel_in_guild, content](const dpp::http_request_completion_t& res) {
 						std::string original_content = content;
 						const nlohmann::json json_commands = nlohmann::json::parse(res.body); // parse the commands returned from api server
-						
 						// replace the command key with the actual command id, so it will be a clickable slash command
 						for (int i = 0; i < json_commands.size(); ++i)
 						{
@@ -123,7 +147,7 @@ void send_hi_message(const std::string& guildId)
 							if (original_content.find(key) != std::string::npos) original_content.replace(original_content.find(key), key.size(), json_commands[i]["id"].get<std::string>());
 						}
 						
-						const dpp::message& hi_message = dpp::message(first_channel_in_guild["id"], original_content);
+						const dpp::message& hi_message = dpp::message(std::stoull((std::string)first_channel_in_guild["id"]), original_content);
 						bot.message_create(hi_message);
 					}, "", "application/json", {
 						{ "Accept", "application/json" },
@@ -197,23 +221,19 @@ void init_bot()
 			Expected_Guilds.insert({i["id"], true});
 		}
 		
-		std::cout << "[Shard " << event.shard_id << " -> WebSocket]" << " Connected to Discord as " << bot.me.username << "#" << std::to_string(bot.me.discriminator) << std::endl;
+		std::cout << "[Event READY] Shard " << event.shard_id << " Connected to Discord as " << bot.me.username << "#" << bot.me.discriminator << std::endl;
 	});
 	
 	bot.on_resumed([](const dpp::resumed_t& event) {
-		std::cout << "[Shard " << event.shard_id << " -> WebSocket]" << " Successfully resumed previous session." << std::endl; 
+		std::cout << "[Event RESUMED] Shard " << event.shard_id << " Resumed previous session." << std::endl; 
 	});
 	
 	bot.on_message_create([](const dpp::message_create_t& event) {
 		nlohmann::json raw_message = nlohmann::json::parse(event.raw_event);
 		
-		if ((event.msg.type == dpp::message_type::mt_application_command) == 1 && event.msg.author.id == bot.me.id) _collectorAck(event); // send to collector ack
+		post_chat(raw_message);
 		
-		// send all messages to chat server
-		bot.request(brainbot::Utils::chatter_url, dpp::http_method::m_post, [](const dpp::http_request_completion_t& res) {}, raw_message.dump(), "application/json", {
-			{ "Authorization", brainbot::Config::ChatRsa },
-			{ "Content-Type", "application/json" }
-		});
+		if ((event.msg.type == dpp::message_type::mt_application_command) == 1 && event.msg.author.id == bot.me.id) _collectorAck(event); // send to collector ack
 	});
 	
 	bot.on_guild_create([](const dpp::guild_create_t& event) {
@@ -225,7 +245,9 @@ void init_bot()
 			{ "guild", raw_created_guild.dump() }
 		};
 		
-		bot.request((std::string)brainbot::Utils::server_url+"/_guild/create", dpp::http_method::m_post, [](const dpp::http_request_completion_t& res) {}, create_payload.dump(), "application/json", {
+		bot.request((std::string)brainbot::Utils::server_url+"/_guild/create", dpp::http_method::m_post, [](const dpp::http_request_completion_t& res) {
+			if (res.status != HttpStatus::toInt(HttpStatus::Code::OK)) std::cout << "[Event GUILD_CREATE] Failed to do POST request with status code: " << res.status << "\n" << res.body << std::endl;
+		}, create_payload.dump(), "application/json", {
 			{ "Authorization", brainbot::Config::ServerRsa },
 			{ "Content-Type", "application/json" }
 		});
@@ -233,8 +255,15 @@ void init_bot()
 		if (event.created->is_unavailable() == 1) return;
 		if (app_state == 0 && Expected_Guilds.find(std::to_string(event.created->id)) != Expected_Guilds.end())
 		{
+			expected_guilds_out = std::chrono::system_clock::now();
 			Expected_Guilds.erase(std::to_string(event.created->id));
-			check_ready();
+			
+			std::thread t([]() {
+				std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+				check_ready();
+			});
+			t.detach();
+			
 			return;
 		}
 		
@@ -243,16 +272,28 @@ void init_bot()
 	});
 	
 	bot.on_guild_delete([](const dpp::guild_delete_t& event) {
+		if (event.deleted->is_unavailable() == 1)
+		{
+			if (app_state == 2 && Expected_Guilds.find(std::to_string(event.deleted->id)) != Expected_Guilds.end())
+			{
+				std::cout << "[Event GUILD_DELETE] Kicked from unavailable guild." << std::endl;
+				Expected_Guilds.erase(std::to_string(event.deleted->id));
+				check_ready();
+			}
+			
+			return;
+		}
+		
 		nlohmann::json delete_payload = {
 			{ "id", (std::string)std::to_string(event.deleted->id) }
 		};
 		
-		bot.request((std::string)brainbot::Utils::server_url+"/_guild/delete", dpp::http_method::m_post, [](const dpp::http_request_completion_t& res) {}, delete_payload.dump(), "application/json", {
+		bot.request((std::string)brainbot::Utils::server_url+"/_guild/delete", dpp::http_method::m_delete, [](const dpp::http_request_completion_t& res) {
+			if (res.status != HttpStatus::toInt(HttpStatus::Code::OK)) std::cout << "[Event GUILD_DELETE] Failed to do DELETE request with status code: " << res.status << "\n" << res.body << std::endl;
+		}, delete_payload.dump(), "application/json", {
 			{ "Authorization", brainbot::Config::ServerRsa },
 			{ "Content-Type", "application/json" }
 		});
-		
-		if (event.deleted->is_unavailable() == 1) return;
 		
 		alert_join_leave((std::string)brainbot::Emojis::leave + " have been kicked from **" + (std::string)event.deleted->name + "**\n**[" + (std::string)std::to_string(dpp::get_guild_count()) + "]**");
 	});

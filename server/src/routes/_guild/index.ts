@@ -23,7 +23,7 @@ GuildRoute.post("/create", verifyPrivateRouting, async (req: Request, res: Respo
 	return res.status(HttpStatusCode.OK).end();
 });
 
-GuildRoute.delete("/remove", verifyPrivateRouting, async (req: Request, res: Response) => {
+GuildRoute.delete("/delete", verifyPrivateRouting, async (req: Request, res: Response) => {
 	const deleted: GuildCD = JSON.parse(JSON.stringify(req.body));
 	_delete(deleted);
 	return res.status(HttpStatusCode.OK).end();

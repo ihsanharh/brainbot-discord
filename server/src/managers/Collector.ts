@@ -2,6 +2,33 @@ import * as path from 'node:path';
 
 import { APIInteraction, APIMessage, CollectorData } from "../typings";
 
+/* Message Components Collector */
+/* used for collecting interaction from discord with message components type
+ * currently this collector is only usable in external thread.
+ * you have to specify working directory and the caller's file need to export collectorCollect and collectorEnd function.
+ * • to be implemented: support main thread
+ * • example of usage:
+ * // to create collector do an http POST request to collector endpoints on this server
+ * fetch("http://server.com/_collector/new", {
+ *   method: "POST",
+ *   body: {
+ *     ...options // see CollectorData interface in typings.ts for reference
+ *   }
+ * }); // when you do this request, the collector get created. you can just listen to collect and end event like below
+ * 
+ * // to listen to collect event, you need to import collectorCollect function from the file where you create this collector.
+ * export function collectorCollect(data: CollectorData, interaction: Interaction) {
+ *   // do something...
+ * }
+ *
+ * // listen to the end of collector life, similar to collect event
+ * export function collectorEnd(data: CollectorData) {
+ *   // do something...
+ * }
+ * // NOTE: to make collect and end function work as expected, make sure you provided valid path of your file to pwd option when creating collector.
+ * // see help command file for actual usage.
+ */
+
 export const ActiveCollector: Map<string, CollectorData> = new Map<string, CollectorData>();
 
 async function _out(data: CollectorData): Promise<void>
@@ -74,7 +101,6 @@ export async function collected(data: CollectorData, interaction: APIInteraction
 			enumerable: true
 		});
 		
-		_collect(data, interaction);
 		ActiveCollector.set(currentData.id, newData);
 	}
 }

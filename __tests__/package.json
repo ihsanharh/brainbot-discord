@@ -1,0 +1,15 @@
+{
+  "name": "test-unit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "guildchannelsroute.test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "undici": "^5.18.0"
+  }
+}

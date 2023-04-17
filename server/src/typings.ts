@@ -20,6 +20,12 @@ export * from "./utils/types";
 
 export type CGuildChannelType = APITextChannel|APINewsChannel|APIGuildVoiceChannel|APIGuildStageVoiceChannel|APIGuildCategoryChannel|APIThreadChannel|APIGuildForumChannel;
 
+export interface GeneratedImagineImage {
+	data,
+	name,
+	contentType
+}
+
 export interface GuildCD
 {
 	id: string;

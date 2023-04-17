@@ -1,6 +1,7 @@
 require('dotenv').config({
 	path: __dirname.substring(0, (__dirname.substring(0, __dirname.lastIndexOf("/"))).lastIndexOf("/")) + "/.env"
 });
+require('sharp');
 
 import * as express from 'express';
 import * as mongoose from 'mongoose';
@@ -16,5 +17,6 @@ mongoose.connect(DatabaseUrl).then(() => console.log("connected to database"));
 App.use("/", routes);
 
 App.listen(ServerPort, () => {
+	console.log(process.env)
 	console.log(`Server is live at http://localhost:${ServerPort}`);
 });

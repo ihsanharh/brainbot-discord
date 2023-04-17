@@ -16,7 +16,7 @@ const DeleteCommand = {
 	description: "Delete bot configuration and prune stored messages.",
 	description_localizations: {},
 	options: [],
-	default_member_permissions: String(PermissionFlagsBits.UseApplicationCommands),
+	default_member_permissions: String(PermissionFlagsBits.UseApplicationCommands | PermissionFlagsBits.ManageGuild),
 	dm_permission: false
 }
 

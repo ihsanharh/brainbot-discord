@@ -1,12 +1,12 @@
 require('dotenv').config({
-	path: __dirname.substring(0, (__dirname.substring(0, __dirname.lastIndexOf("/"))).lastIndexOf("/")) + "/.env"
+	path: __dirname.substring(0, (__dirname.lastIndexOf("/"))) + "/.env"
 });
-const { fetch } = require('node:undici');
+const { fetch } = require('undici');
 
 (async function main()
 {
 	const ServerUrl = String(process.env.SERVER_URL).replace("$SERVER_PORT", process.env.SERVER_PORT);
-	const Guild = "888088937569083443";
+	const Guild = "793734270635212822";
 	const User = process.env.DISCORD_APP_ID;
 	
 	console.log( await (await fetch(`${ServerUrl}/_guild/${Guild}/channels?permissionsfor=${User}`, {
