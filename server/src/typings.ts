@@ -20,10 +20,18 @@ export * from "./utils/types";
 
 export type CGuildChannelType = APITextChannel|APINewsChannel|APIGuildVoiceChannel|APIGuildStageVoiceChannel|APIGuildCategoryChannel|APIThreadChannel|APIGuildForumChannel;
 
-export interface GeneratedImagineImage {
-	data,
-	name,
-	contentType
+export enum OwnResponsePayloadType {
+	DATABASE_QUERY,
+	GUILD,
+	COLLECTOR
+}
+
+export interface OwnResponsePayload {
+	m: string; // must be like this: "404: Not Found."
+	t: OwnResponsePayloadType; // type of response
+	d: {
+		[key: string]: unknown;
+	}
 }
 
 export interface GuildCD

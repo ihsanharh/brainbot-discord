@@ -2,7 +2,16 @@ import * as Sharp from 'sharp';
 
 import { DiscordAppId, DiscordChannelStorage } from "../utils/config";
 import { res } from "../utils/res";
-import { APIMessage, Routes } from "../typings";
+import { APIChannel, APIMessage, Routes } from "../typings";
+
+export async function delete_original_response(token: string): Promise<any>
+{
+	try
+	{
+		return await res.delete(Routes.webhookMessage(DiscordAppId, token)).then((r) => {}).catch((err) => {});
+	}
+	catch(e: unknown) {}
+}
 
 export async function followup_message(token: string, payload: {body:{[k:string]:any;};files?:any;}): Promise<any>
 {
@@ -64,14 +73,16 @@ export async function storeInStorage(generated: any, upscaled: boolean = false, 
 		files: generated
 	}) as APIMessage;
 	else {
-		let thread = data?.thread;
-		if (!data?.thread) thread = await res.post(Routes.threads(DiscordChannelStorage, data.id), {
+		var getParentMessage = await res.get(Routes.channelMessage(DiscordChannelStorage, data.id)) as APIMessage;
+		let thread = getParentMessage?.thread;
+		
+		if (!thread) thread = await res.post(Routes.threads(DiscordChannelStorage, data.id), {
 			body: {
 				name: "upscaled"
 			}
-		});
+		}) as APIChannel;
 		
-		return await res.post(Routes.channelMessages(thread?.id), {
+		return await res.post(Routes.channelMessages(thread?.id as string), {
 			files: generated
 		}) as APIMessage;
 	}

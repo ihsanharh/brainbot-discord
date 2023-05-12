@@ -19,6 +19,7 @@
 
 // bot variables for discord connection
 int app_state;
+uint64_t guilds_count = 0;
 std::chrono::time_point<std::chrono::system_clock> expected_guilds_out;
 
 const std::string BotToken = brainbot::Config::Token;
@@ -44,6 +45,7 @@ void check_ready()
 		Expected_Guilds.clear();
 		app_state = 1; // 1: Brain Bot is fully ready.
 		std::cout << "[Var Expected_Guilds] All guilds is now available." << std::endl;
+		std::cout << "[Var Expected_Guilds] A total of " << guilds_count << " guilds loaded." << std::endl;
 	} else if (is_thirty_seconds.count() >= 30000)
 	{
 		app_state = 2; // 2: Brain Bot is ready while there's unavailable guilds.
@@ -221,6 +223,11 @@ void init_bot()
 			Expected_Guilds.insert({i["id"], true});
 		}
 		
+		for (auto const& shard : bot.get_shards())
+		{
+			guilds_count += shard.second->get_guild_count();
+		}
+		
 		std::cout << "[Event READY] Shard " << event.shard_id << " Connected to Discord as " << bot.me.username << "#" << bot.me.discriminator << std::endl;
 	});
 	
@@ -267,6 +274,7 @@ void init_bot()
 			return;
 		}
 		
+		guilds_count += 1;
 		send_hi_message(std::to_string(event.created->id));
 		alert_join_leave((std::string)brainbot::Emojis::join + " has been added to **" + (std::string)event.created->name + "**\n**[" + (std::string)std::to_string(dpp::get_guild_count()) + "]**");
 	});
@@ -295,6 +303,7 @@ void init_bot()
 			{ "Content-Type", "application/json" }
 		});
 		
+		guilds_count -= 1;
 		alert_join_leave((std::string)brainbot::Emojis::leave + " have been kicked from **" + (std::string)event.deleted->name + "**\n**[" + (std::string)std::to_string(dpp::get_guild_count()) + "]**");
 	});
 	

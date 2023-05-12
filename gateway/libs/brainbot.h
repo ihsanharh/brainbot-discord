@@ -1,13 +1,17 @@
 #ifndef BRAINBOT_H_
 #define BRAINBOT_H_
 
+#include <cstdint> // uint32_t
+#include <string> // string
+
 void init_bot();
 
 namespace brainbot
 {
 	namespace Config
 	{
-		static uint32_t Enabled_GatewayIntents       = dpp::i_default_intents | dpp::i_message_content;
+		                                               /*GUILDS*/ /*DIRECT_MESSAGES*/ /*GUILD_MESSAGES*/ /*MESSAGE_CONTENT*/ 
+		static uint32_t Enabled_GatewayIntents       =   1 << 0  |     1 << 12       |     1 << 9       |       1 << 15;
 		static uint32_t Shard_Count                  = 2;
 		static const std::string Token               = std::getenv("BRAIN_BOTD_TOKEN");
 		static const std::string ServerRsa           = std::getenv("SERVER_RSA");

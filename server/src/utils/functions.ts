@@ -55,6 +55,18 @@ export function colourInt(code: string): number
 	return parseInt(code.replace('#', ''), 16);
 }
 
+export function formatOwnResponse(str: string, args: string[]): string
+{
+	var res = str;
+	
+	for (let i = 0; i < args.length; i++)
+	{
+		res = res.replace(`@${i}`, args[i]);
+	}
+	
+	return res;
+}
+
 export async function getDiscordChannel(id: string): Promise<APIChannel|null>
 {
 	try

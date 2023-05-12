@@ -1,11 +1,11 @@
 import { fetch, Response } from 'undici';
 
 import * as Cache from "../managers/Cache";
-import { storeInStorage, makeOneImage, followup_message } from "./addition";
+import { delete_original_response, storeInStorage, makeOneImage, followup_message } from "./addition";
 import { DiscordAppId, SdUrl } from "../utils/config";
 import { b64toab } from "../utils/functions";
 import { res } from "../utils/res";
-import { APIButtonComponentWithCustomId, APIMessage, APIUser, Routes } from "../typings";
+import { APIButtonComponentWithCustomId, APIMessage, APIUser, HttpStatusCode, Routes } from "../typings";
 
 export const ModelPath: string = "prompthero/openjourney";
 export const ModelVersion: string = "9936c2001faa2194a261c01381f90e65261879985476014a0a37a334593a05eb";
@@ -27,6 +27,17 @@ export async function generate(prompt: string, author: APIUser, token: string): 
 			asbuffer: true,
 		})
 	}).then(async (prediction: any) => {
+		if (prediction?.status === HttpStatusCode.NO_CONTENT || prediction.status === HttpStatusCode.INTERNAL_SERVER_ERROR)
+		{
+			delete_original_response(token);
+			followup_message(token, {
+				body: {
+					content: "Something went wrong={, The imagination was cancelled."
+				}
+			});
+			return;
+		}
+		
 		prediction = await prediction.json();
 		var generated: {data:Buffer;name:string;contentType:string;}[] = [];
 		var upscaleButtons: APIButtonComponentWithCustomId[] = [];
@@ -56,7 +67,7 @@ export async function generate(prompt: string, author: APIUser, token: string): 
 				})
 			}
 			
-			res.delete(Routes.webhookMessage(DiscordAppId, token)).then((r) => {}).catch((err) => {});
+			delete_original_response(token);
 			followup_message(token, {
 				body: {
 					content: `**${prompt}** - <@${author?.id}> (Completed.)`,
