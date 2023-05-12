@@ -13,7 +13,7 @@ GuildRoute.get("/count", async (req: Request, res: Response) => {
 	const guilds: APIGuild[] = await getGuilds() as APIGuild[];
 	
 	return res.status(HttpStatusCode.OK).json({
-		"count": `${guilds.length}`
+		"count": guilds? `${guilds.length}`: `1`
 	});
 });
 

@@ -12,7 +12,7 @@ export const ModelVersion: string = "9936c2001faa2194a261c01381f90e6526187998547
 
 export async function generate(prompt: string, author: APIUser, token: string): Promise<void>
 {
-	fetch(SdUrl, {
+	fetch(SdUrl[0], {
 		method: "POST",
 		headers: {
 			"Authorization": "brainbotstablediffusion-1",

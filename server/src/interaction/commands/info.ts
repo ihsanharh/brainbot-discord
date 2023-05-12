@@ -1,11 +1,14 @@
 import { fetch, Response } from 'undici';
 
 import {
+	APIInteraction,
 	ApplicationCommandOptionType,
 	InteractionResponseType,
-	PermissionFlagsBits
+	PermissionFlagsBits,
+	Routes
 } from "../../typings";
-import { ServerUrl } from "../../utils/config";
+import { DiscordAppId, ServerUrl } from "../../utils/config";
+import { res } from "../../utils/res";
 import Command from "./base";
 
 const InfoCommand = {
@@ -27,17 +30,26 @@ class Info extends Command
 	
 	async execute(): Promise<void>
 	{
-		var server_count = await fetch(`${ServerUrl}/_guild/count`);
-		
-		var message: string = `**Brain Bot** is an AI-Powered Discord Chat bot. I am in ${(await server_count.json() as {count: string}).count ?? "NaN"} servers`;
-		
+		stats(this.command as APIInteraction);
 		return this.reply({
-			type: InteractionResponseType.ChannelMessageWithSource,
-			data: {
-				content: message
-			}
+			type: InteractionResponseType.DeferredChannelMessageWithSource,
+			data: {}
 		});
 	}
+}
+
+async function stats(interaction: APIInteraction): Promise<void>
+{
+	var guilds = await fetch(`${ServerUrl}/_guild/count`);
+	var guilds_count = (await guilds.json() as {count: string})?.count?? "NaN";
+	var conversation_count = "no one is currently talking to me."
+	var message: string = `<:brainbot:992352663779946536> **Brain Bot** is an AI-Powered Discord Chat bot. I am in ${guilds_count} servers and ${conversation_count}`
+	
+	res.patch(Routes.webhookMessage(DiscordAppId, interaction?.token), {
+		body: {
+			content: message
+		}
+	});
 }
 
 export default Info;

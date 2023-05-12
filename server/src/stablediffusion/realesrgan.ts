@@ -45,7 +45,7 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 				flags: MessageFlags.Ephemeral
 			}
 		}).then(async (followupMessage: any) => {
-			fetch(SdUrl, {
+			fetch(SdUrl[1], {
 				method: "POST",
 				headers: {
 					"Authorization": "brainbotstablediffusion-1",

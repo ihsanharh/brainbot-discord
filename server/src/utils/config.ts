@@ -10,4 +10,4 @@ export const DatabaseUrl: string = String(process.env.DATABASE_URL);
 export const Rsa: string = String(process.env.SERVER_RSA);
 export const ServerPort: string = (AppMode === 0)? String(process.env.SERVER_PORT): String(Number(process.env.SERVER_PORT)+1);
 export const ServerUrl: string = String(process.env.SERVER_URL).replace("$SERVER_PORT", ServerPort);
-export const SdUrl: string = String(process.env.SD_URL);
+export const SdUrl: string[] = [String(process.env.SD_OPENJOURNEY), String(process.env.SD_REALERSGAN)];

@@ -6,7 +6,7 @@ export const GuildsCache: Map<string, string> = new Map<string, string>();
 
 export async function _add(guild: GuildCD): Promise<void>
 {
-	GuildsCache.set(guild.id, guild.guild as string);
+	GuildsCache.set(guild.id, guild?.guild as string);
 }
 
 export async function _delete(guild: GuildCD): Promise<void>
@@ -18,20 +18,29 @@ export async function getGuilds(): Promise<APIGuild[]|null>
 {
 	try
 	{
-		if (GuildsCache.size >= 1)
+		if (GuildsCache.size < 1)
 		{
-			return Array.from(GuildsCache.values()).map((str_guild: string) => JSON.parse(str_guild)) as APIGuild[];
-		}
-		else
-		{
-			const guilds = await res.get(Routes.userGuilds()) as APIGuild[];
-			guilds.forEach((guild: APIGuild) => GuildsCache.set(guild.id, JSON.stringify(guild)));
+			let lastGuild;
 			
-			return guilds;
+			while (true)
+			{
+				const fetched = await res.get(Routes.userGuilds(), {
+					query: lastGuild? new URLSearchParams(`after=${lastGuild?.id}`): undefined
+				}) as APIGuild[];
+				fetched.forEach((guild: APIGuild) => GuildsCache.set(guild.id, JSON.stringify(guild)));
+				
+				if (fetched.length >= 200) lastGuild = fetched[199];
+				else break;
+			}
+			
+			console.log(GuildsCache.size)
 		}
+		
+		return [...[...GuildsCache.values()].map((str_guild: string) => JSON.parse(str_guild) as APIGuild)]
 	}
-	catch
+	catch(e: unknown)
 	{
+		console.error(e)
 		return null;
 	}
 }

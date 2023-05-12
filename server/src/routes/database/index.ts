@@ -9,6 +9,13 @@ const DatabaseRoute: Router = Router();
 
 DatabaseRoute.use(json());
 
+DatabaseRoute.get("/*", (req: Request, res: Response) => {
+	console.log(req);
+	return res.status(200).json({
+		"anjing": "blok",
+	});
+});
+
 /*
  * Blacklist route
  *

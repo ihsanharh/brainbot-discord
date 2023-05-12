@@ -2,40 +2,103 @@ import http from 'node:http';
 import replicate from 'node-replicate';
 import { fetch } from 'undici';
 
+const ActivePrediction = new Map();
+
 http.createServer((req, res) => {
 	var { authorization } = req.headers;
+	var origin = req.headers['x-forwarded-for'];
 	var authKey = process.env.KEY;
 	
-	if (req.method === "GET") return res.writeHead(200).end("hi!");
-	if (req.method !== "POST") return;
-	if (!authorization || authorization !== authKey) {
-		console.log("unrecognised request.");
+	console.log(`IncomingMessage from ${origin}`);
+	if (!authorization || authorization !== authKey)
+	{
+		console.log(`${origin} unrecognised request.`);
 		return res.writeHead(404).end();
 	}
-	else {
-		let body = "";
+	else
+	{
+		var returnHeaders = {
+			'Content-Type': 'application/json'
+		}
 		
-		req.on('data', (chunk) => {
-			body += chunk;
-		});
-		
-		req.on('end', async () => {
-			var { model, t, asbuffer, ...input } = JSON.parse(body);
+		if (req.method === 'GET')
+		{
+			var { uuid } = req.query();
 			
-			const images = await replicate.run(model, input);
+			if (!uuid) return res.writeHead(403).end();
+			var prediction = ActivePrediction.get(uuid);
 			
-			res.writeHead(200).end(JSON.stringify({
-				output: asbuffer? await bufferit(images): images,
-			}));
-		});
+			if (prediction) return res
+			.writeHead(200, returnHeaders)
+			.end(JSON.stringify(prediction));
+			else return res
+			.writeHead(404)
+			.end();
+		}
+		else if (req.method === 'POST')
+		{
+			let body = '';
+			
+			console.log(`(${origin}) POST request accepted`);
+			
+		  req.on('data', (chunk) => {
+			  body += chunk;
+		  });
+		  
+		  req.on('end', async () => {
+		  	var { model, t, asbuffer, ...input } = JSON.parse(body);
+			  let prediction = await replicate.create(model, input);
+			  
+			  console.log(`(${origin}) processing`);
+			  
+			  while(!['canceled', 'succeeded', 'failed'].includes(prediction.status))
+			  {
+				  await new Promise(_ => setTimeout(_, 250));
+				  prediction = await replicate.get(prediction);
+				  
+				  ActivePrediction.set(prediction['uuid'], prediction);
+			  }
+			  
+			  ActivePrediction.delete(prediction['uuid']);
+			  console.log(`(${origin}) ${prediction.status}`);
+			  
+			  if (prediction.status === 'succeeded')
+			  {
+			  	return res
+			  	.writeHead(200, returnHeaders)
+			  	.end(JSON.stringify({
+			  		output: asbuffer? await bufferit(prediction.output): prediction.output,
+			  	}));
+			  }
+			  else if (prediction.status === 'canceled')
+			  {
+			  	return res
+			  	.writeHead(204, returnHeaders)
+			  	.end({
+			  		'output': false
+			  	});
+			  }
+			  else if (prediction.status === 'failed')
+			  {
+			  	return res
+			  	.writeHead(500, returnHeaders)
+			  	.end({
+				    'output': false
+			    });
+			  }
+		  });
+		}
 	}
 }).listen(process.env.PORT);
 
-async function bufferit(outputs) {
-	if (typeof outputs === 'string') {
+async function bufferit(outputs)
+{
+	if (typeof outputs === 'string')
+	{
 		const image = await fetch(outputs);
 		
-		if (image.ok) {
+		if (image.ok)
+		{
 			let data = abtob64(await image.arrayBuffer());
 			
 			return {
@@ -43,13 +106,17 @@ async function bufferit(outputs) {
 				data
 			};
 		}
-	} else {
+	}
+	else
+	{
 		var results = [];
 		
-		for (let i = 0; i < outputs.length; i++) {
+		for (let i = 0; i < outputs.length; i++)
+		{
 			const image = await fetch(outputs[i]);
 			
-			if (image.ok) {
+			if (image.ok)
+			{
 				let data = abtob64(await image.arrayBuffer());
 				
 				results.push({
@@ -63,7 +130,8 @@ async function bufferit(outputs) {
 	}
 }
 
-function abtob64(buffer) {
+function abtob64(buffer)
+{
 	var binary = '';
 	var bytes = new Uint8Array(buffer);
 	var len = bytes.byteLength;
@@ -73,4 +141,12 @@ function abtob64(buffer) {
 	}
 	
 	return btoa(binary);
+}
+
+http.IncomingMessage.prototype.query = function() {
+	var asString = String(this.url).split('?').slice(1).join();
+	if (asString.length < 1) return {}
+	
+	var cleaned = asString.replaceAll('&', '","').replaceAll('=', '":"');
+	return JSON.parse('{"' + cleaned + '"}');
 }
