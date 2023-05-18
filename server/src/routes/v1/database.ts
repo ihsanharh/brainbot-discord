@@ -2,9 +2,10 @@ import { Request, Response, Router, json } from 'express';
 
 import { formatOwnResponse, makeId } from "../../utils/functions";
 import { HttpStatusCode } from "../../utils/types/http";
-import { OwnResponsePayload, OwnResponsePayloadType } from "../../typings";
+import { OwnResponsePayloadType } from "../../typings";
 import BlacklistSchema, { Blacklist } from "../../schemas/blacklist";
 import ChatSchema, { Chat } from "../../schemas/chat";
+import * as OwnResponse from "../../constants/OwnResponse";
 
 const Collections: {[key: string]: any;} = {
 	blacklist: BlacklistSchema,
@@ -21,30 +22,6 @@ const Collections: {[key: string]: any;} = {
  * DELETE: remove record from database
  */
 
-const responses = [
-	/* @0 is recommended for status code. */
-	
-	/* 0 DEFAULT */ [
-		"@0: @1 does not exist.",
-		"@0: id query/params must be 12 bytes long or more."
-	],
-	/* 1 GET */ [
-		"@0: nothing found.",
-		"@0: found."
-	],
-	/* 2 POST */ [
-		"@0: failed to create requested record.",
-		"@0: record created.",
-		"@0: already exist."
-	],
-	/* 3 PATCH */ [
-		"@0: record updated."
-	],
-	/* 4 DELETE */ [
-		"@0: record deleted."
-	],
-]
-
 const DatabaseRoute: Router = Router();
 
 DatabaseRoute.use(json());
@@ -53,17 +30,17 @@ DatabaseRoute.use(json());
 DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 	var { collection, id } = req.params;
 	var { many } = req.query;
-	var statusCode = HttpStatusCode.OK, result, m;
+	var statusCode = HttpStatusCode.OK, result, d, m;
 	
 	if (!Collections[collection])
 	{
 		statusCode = HttpStatusCode.NOT_FOUND;
-		m = formatOwnResponse(responses[0][0], [`${statusCode}`, collection]);
+		m = formatOwnResponse(OwnResponse.Common.DoesNotExist, [`${statusCode}`, collection]);
 	}
 	else if (id && String(id).length < 12 || req.body && req.body?._id && String(req.body?._id).length < 12)
 	{
 		statusCode = HttpStatusCode.LENGTH_REQUIRED;
-		m = formatOwnResponse(responses[0][1], [`${statusCode}`]);
+		m = formatOwnResponse(OwnResponse.Common.QueryParamsLength, [`${statusCode}`, "id", "12 characters"]);
 	}
 	else
 	{
@@ -77,12 +54,12 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.FOUND;
-					m = formatOwnResponse(responses[1][1], [`${statusCode}`]);
+					m = formatOwnResponse(OwnResponse.Common.Found, [`${statusCode}`]);
 				}
 				else
 				{
 					statusCode = HttpStatusCode.NOT_FOUND;
-					m = formatOwnResponse(responses[1][0], [`${statusCode}`]);
+					m = formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
 				}
 				
 				break;
@@ -99,12 +76,12 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.CREATED;
-					m = formatOwnResponse(responses[2][1], [`${statusCode}`]);
+					m = formatOwnResponse(OwnResponse.Database.RecordCreated, [`${statusCode}`]);
 				}
 				else
 				{
 					statusCode = HttpStatusCode.CONFLICT;
-					m = isExisting? formatOwnResponse(responses[2][2], [`${statusCode}`]): formatOwnResponse(responses[2][0], [`${statusCode}`]);
+					m = isExisting? formatOwnResponse(OwnResponse.Database.AlreadyExist, [`${statusCode}`]): formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
 					result = isExisting? isExisting: null;
 				}
 				
@@ -117,12 +94,12 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.ACCEPTED;
-					m = formatOwnResponse(responses[3][0], [`${statusCode}`]);
+					m = formatOwnResponse(OwnResponse.Database.RecordUpdated, [`${statusCode}`]);
 				}
 				else
 				{
 					statusCode = HttpStatusCode.NOT_FOUND;
-					m = formatOwnResponse(responses[1][0], [`${statusCode}`]);
+					m = formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
 				}
 				
 				break;
@@ -132,24 +109,27 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.ACCEPTED;
-					m = formatOwnResponse(responses[4][0], [`${statusCode}`]);
+					m = formatOwnResponse(OwnResponse.Database.RecordDeleted, [`${statusCode}`]);
 				}
 				else
 				{
-					statusCode = HttpStatusCode.CONFLICT;
-					m = formatOwnResponse(responses[1][0], [`${statusCode}`]);
+					statusCode = HttpStatusCode.NOT_FOUND;
+					m = formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
 				}
 				
 				break;
 			default:
 			  statusCode = HttpStatusCode.NOT_IMPLEMENTED;
+			  m = formatOwnResponse(OwnResponse.Common.NotSupported, [`${statusCode}`, `${req.method}`]);
 		}
 	}
+	
+	if (result) d = JSON.parse(JSON.stringify(result));
 	
 	return res.status(statusCode).json({
 		m,
 		t: OwnResponsePayloadType.DATABASE_QUERY,
-		d: result? JSON.parse(JSON.stringify(result)): {},
+		d
 	});
 });
 

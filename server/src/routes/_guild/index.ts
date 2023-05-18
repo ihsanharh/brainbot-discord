@@ -11,7 +11,7 @@ GuildRoute.use(json({ limit: "100mb" }));
 
 GuildRoute.get("/count", async (req: Request, res: Response) => {
 	const guilds: APIGuild[] = await getGuilds() as APIGuild[];
-	
+	console.log(guilds);
 	return res.status(HttpStatusCode.OK).json({
 		"count": guilds? `${guilds.length}`: `1`
 	});

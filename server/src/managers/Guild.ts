@@ -32,14 +32,13 @@ export async function getGuilds(): Promise<APIGuild[]|null>
 				if (fetched.length >= 200) lastGuild = fetched[199];
 				else break;
 			}
-			
-			console.log(GuildsCache.size)
 		}
 		
 		return [...[...GuildsCache.values()].map((str_guild: string) => JSON.parse(str_guild) as APIGuild)]
 	}
 	catch(e: unknown)
 	{
+		console.error("guilds fetch error!!!!!!!!")
 		console.error(e)
 		return null;
 	}

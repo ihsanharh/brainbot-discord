@@ -21,6 +21,8 @@ export * from "./utils/types";
 export type CGuildChannelType = APITextChannel|APINewsChannel|APIGuildVoiceChannel|APIGuildStageVoiceChannel|APIGuildCategoryChannel|APIThreadChannel|APIGuildForumChannel;
 
 export enum OwnResponsePayloadType {
+	REQUEST,
+	AUTHENTICATION,
 	DATABASE_QUERY,
 	GUILD,
 	COLLECTOR
