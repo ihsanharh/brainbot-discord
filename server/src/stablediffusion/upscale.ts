@@ -6,8 +6,8 @@ import { b64toab } from "../utils/functions";
 import { res } from "../utils/res";
 import { APIButtonComponentWithCustomId, APIInteraction, APIMessage, APIUser, MessageFlags, Routes } from "../typings";
 
-export const ModelPath: string = "nightmareai/real-esrgan";
-export const ModelVersion: string = "42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b";
+export const ModelPath: string = "jingyunliang/swinir";
+export const ModelVersion: string = "660d922d33153019e8c263a3bba265de882e7f4f70396546b6c9c8f9d47a021a";
 
 export async function upscaler(interaction: APIInteraction, selectedComponents: APIButtonComponentWithCustomId, dataId: string, imageIndex: number, checked?: boolean): Promise<void>
 {
@@ -54,7 +54,7 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 				body: JSON.stringify({
 					model: `${ModelPath}:${ModelVersion}`,
 					image: data.attachments[imageIndex].url,
-				  scale: 4,
+				  noise: 15,
 				  asbuffer: true,
 			  }),
 		  }).then(async (prediction: any) => {

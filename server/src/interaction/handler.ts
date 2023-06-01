@@ -6,7 +6,7 @@ import { workerData } from 'node:worker_threads';
 import { APIAttachment, APIInteraction, CollectorData, InteractionResponseType, InteractionType, MessageFlags, Routes } from "../typings";
 import { respond } from "./commands/base";
 import { _collect } from "../managers/Collector";
-import { upscaler } from "../stablediffusion/realesrgan";
+import { upscaler } from "../stablediffusion/upscale";
 import { DiscordCommandChannel, Rsa, ServerUrl } from "../utils/config";
 import { res } from "../utils/res";
 

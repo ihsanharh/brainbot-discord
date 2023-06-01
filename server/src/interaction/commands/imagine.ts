@@ -4,7 +4,7 @@ import Command from "./base";
 import { Rsa, ServerUrl } from "../../utils/config";
 import { PermissionFlagsBits, InteractionResponseType, MessageFlags } from "../../typings";
 import * as Queue from "../../managers/Cache";
-import { generate } from "../../stablediffusion/openjourney";
+import { generate } from "../../stablediffusion/imagine";
 
 const ImagineCommand = {
 	name: "imagine",

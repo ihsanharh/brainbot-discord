@@ -7,8 +7,8 @@ import { b64toab } from "../utils/functions";
 import { res } from "../utils/res";
 import { APIButtonComponentWithCustomId, APIMessage, APIUser, HttpStatusCode, Routes } from "../typings";
 
-export const ModelPath: string = "prompthero/openjourney";
-export const ModelVersion: string = "9936c2001faa2194a261c01381f90e65261879985476014a0a37a334593a05eb";
+export const ModelPath: string = "ai-forever/kandinsky-2";
+export const ModelVersion: string = "601eea49d49003e6ea75a11527209c4f510a93e2112c969d548fbb45b9c4f19f";
 
 export async function generate(prompt: string, author: APIUser, token: string): Promise<void>
 {
@@ -20,9 +20,9 @@ export async function generate(prompt: string, author: APIUser, token: string): 
 		},
 		body: JSON.stringify({
 			model: `${ModelPath}:${ModelVersion}`,
-			prompt: "mdjrny-v4 style "+prompt,
-			num_outputs: 4,
-			guidance_scale: 14,
+			prompt: prompt,
+			batch_size: 4,
+			guidance_scale: 6,
 			t: token,
 			asbuffer: true,
 		})
