@@ -2,6 +2,8 @@ require('dotenv').config({
 	path: __dirname.substring(0, (__dirname.substring(0, __dirname.lastIndexOf("/"))).lastIndexOf("/")) + "/.env"
 });
 require('sharp');
+require("./error");
+require("./services/redis");
 
 import { Express, Response, Request, NextFunction } from 'express';
 import * as express from 'express';
@@ -9,10 +11,9 @@ import * as mongoose from 'mongoose';
 import helmet from 'helmet';
 
 import { OwnResponsePayloadType } from "./typings";
+import { asOwnResponse } from "./services/own";
 import { DatabaseUrl, ServerPort } from "./utils/config";
-import { formatOwnResponse } from "./utils/functions";
 import { HttpStatusCode } from "./utils/types/http";
-import * as OwnResponse from "./constants/OwnResponse";
 import routes from "./routes";
 
 const App: Express = express();
@@ -30,19 +31,17 @@ App.use("/", routes);
 App.use(async (req: Request, res: Response) => {
 	var statusCode = HttpStatusCode.NOT_FOUND;
 	
-	return res.status(statusCode).json({
-		m: formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]),
-		t: OwnResponsePayloadType.REQUEST
-	});
+	return res.status(statusCode).json(
+		asOwnResponse([`${statusCode}`], OwnResponsePayloadType.REQUEST, "Common.NotFound")
+	);
 });
 
 App.use(async (err, req: Request, res: Response) => {
 	var statusCode = HttpStatusCode.INTERNAL_SERVER_ERROR;
 	
-	return res.status(statusCode).json({
-		m: formatOwnResponse(OwnResponse.Common.InternalServerError, [`${statusCode}`]),
-		t: OwnResponsePayloadType.REQUEST
-	});
+	return res.status(statusCode).json(
+		asOwnResponse([`${statusCode}`], OwnResponsePayloadType.REQUEST, "Common.InternalServerError")
+	);
 });
 
 App.listen(ServerPort, () => {

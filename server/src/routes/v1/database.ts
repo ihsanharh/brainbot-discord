@@ -1,11 +1,11 @@
 import { Request, Response, Router, json } from 'express';
 
-import { formatOwnResponse, makeId } from "../../utils/functions";
+import { asOwnResponse } from "../../services/own";
+import { makeId } from "../../utils/functions";
 import { HttpStatusCode } from "../../utils/types/http";
 import { OwnResponsePayloadType } from "../../typings";
 import BlacklistSchema, { Blacklist } from "../../schemas/blacklist";
 import ChatSchema, { Chat } from "../../schemas/chat";
-import * as OwnResponse from "../../constants/OwnResponse";
 
 const Collections: {[key: string]: any;} = {
 	blacklist: BlacklistSchema,
@@ -30,17 +30,19 @@ DatabaseRoute.use(json());
 DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 	var { collection, id } = req.params;
 	var { many } = req.query;
-	var statusCode = HttpStatusCode.OK, result, d, m;
+	var statusCode = HttpStatusCode.OK, result, d, m, p = [];
 	
 	if (!Collections[collection])
 	{
 		statusCode = HttpStatusCode.NOT_FOUND;
-		m = formatOwnResponse(OwnResponse.Common.DoesNotExist, [`${statusCode}`, collection]);
+		m = "Common.DoesNotExist";
+		p = [collection];
 	}
 	else if (id && String(id).length < 12 || req.body && req.body?._id && String(req.body?._id).length < 12)
 	{
 		statusCode = HttpStatusCode.LENGTH_REQUIRED;
-		m = formatOwnResponse(OwnResponse.Common.QueryParamsLength, [`${statusCode}`, "id", "12 characters"]);
+		m = "Common.QueryParamsLength" 
+		p = ["id", "12 characters"];
 	}
 	else
 	{
@@ -54,12 +56,12 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.FOUND;
-					m = formatOwnResponse(OwnResponse.Common.Found, [`${statusCode}`]);
+					m = "Common.Found"
 				}
 				else
 				{
 					statusCode = HttpStatusCode.NOT_FOUND;
-					m = formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
+					m = "Common.NotFound"
 				}
 				
 				break;
@@ -76,12 +78,12 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.CREATED;
-					m = formatOwnResponse(OwnResponse.Database.RecordCreated, [`${statusCode}`]);
+					m = "Database.RecordCreated"
 				}
 				else
 				{
 					statusCode = HttpStatusCode.CONFLICT;
-					m = isExisting? formatOwnResponse(OwnResponse.Database.AlreadyExist, [`${statusCode}`]): formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
+					m = isExisting? "Database.AlreadyExist": "Common.NotFound"
 					result = isExisting? isExisting: null;
 				}
 				
@@ -94,12 +96,12 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.ACCEPTED;
-					m = formatOwnResponse(OwnResponse.Database.RecordUpdated, [`${statusCode}`]);
+					m = "Database.RecordUpdated";
 				}
 				else
 				{
 					statusCode = HttpStatusCode.NOT_FOUND;
-					m = formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
+					m = "Common.NotFound";
 				}
 				
 				break;
@@ -109,28 +111,27 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				if (result)
 				{
 					statusCode = HttpStatusCode.ACCEPTED;
-					m = formatOwnResponse(OwnResponse.Database.RecordDeleted, [`${statusCode}`]);
+					m = "Database.RecordDeleted";
 				}
 				else
 				{
 					statusCode = HttpStatusCode.NOT_FOUND;
-					m = formatOwnResponse(OwnResponse.Common.NotFound, [`${statusCode}`]);
+					m = "Common.NotFound";
 				}
 				
 				break;
 			default:
 			  statusCode = HttpStatusCode.NOT_IMPLEMENTED;
-			  m = formatOwnResponse(OwnResponse.Common.NotSupported, [`${statusCode}`, `${req.method}`]);
+			  m = "Common.NotSupported";
+			  p = [req.method];
 		}
 	}
 	
 	if (result) d = JSON.parse(JSON.stringify(result));
 	
-	return res.status(statusCode).json({
-		m,
-		t: OwnResponsePayloadType.DATABASE_QUERY,
-		d
-	});
+	return res.status(statusCode).json(
+		asOwnResponse([`${statusCode}`, ...p], OwnResponsePayloadType.DATABASE_QUERY, m, d)
+	);
 });
 
 export default DatabaseRoute;
