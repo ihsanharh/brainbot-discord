@@ -2,12 +2,12 @@ import { Schema, model } from 'mongoose';
 
 export interface Imagine {
 	_id: string;
-	imagination: string[];
 	lastImaginationTime: string;
+	imagination?: string[];
 }
 
-export default model("cooldown", new Schema<Imagine>({
+export default model("c_imagine", new Schema<Imagine>({
 	_id: { type: String, required: true },
-	imagination: { type: Array, required: true },
 	lastImaginationTime: { type: String, required: true },
+	imagination: { type: Array, default: [] }
 }));
