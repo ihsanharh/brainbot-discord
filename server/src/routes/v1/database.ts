@@ -4,12 +4,14 @@ import { asOwnResponse } from "../../services/own";
 import { makeId } from "../../utils/functions";
 import { HttpStatusCode } from "../../utils/types/http";
 import { OwnResponsePayloadType } from "../../typings";
-import BlacklistSchema, { Blacklist } from "../../schemas/blacklist";
-import ChatSchema, { Chat } from "../../schemas/chat";
+import BlacklistSchema from "../../schemas/blacklist";
+import ChatSchema from "../../schemas/chat";
+import ImagineSchema from "../../schemas/imagine";
 
 const Collections: {[key: string]: any;} = {
 	blacklist: BlacklistSchema,
-	chat: ChatSchema
+	chat: ChatSchema,
+	imagine: ImagineSchema
 }
 
 /* Route for /v1/database/{collection}/{id}?
@@ -30,7 +32,7 @@ DatabaseRoute.use(json());
 DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 	var { collection, id } = req.params;
 	var { many } = req.query;
-	var statusCode = HttpStatusCode.OK, result, d, m, p = [];
+	var statusCode = HttpStatusCode.OK, result, d, m, p: string[] = [];
 	
 	if (!Collections[collection])
 	{
