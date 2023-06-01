@@ -53,7 +53,6 @@ const HelpCommand = {
 const state = makeId(30);
 
 export const customId: {
-	[k: string]: string
 	CommandsListEmbed: string;
 	HelpMenuButton: string;
 	HelpMenuEmbed: string;
