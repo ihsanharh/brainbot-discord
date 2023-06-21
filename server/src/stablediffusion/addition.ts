@@ -1,8 +1,10 @@
+import { fetch } from 'undici';
 import * as Sharp from 'sharp';
 
-import { DiscordAppId, DiscordChannelStorage } from "../utils/config";
+import { DiscordAppId, DiscordChannelStorage, Rsa, ServerUrl } from "../utils/config";
 import { res } from "../utils/res";
-import { APIChannel, APIMessage, Routes } from "../typings";
+import { HttpStatusCode } from "../utils/types/http";
+import { APIChannel, APIMessage, APIUser, Routes } from "../typings";
 
 export async function delete_original_response(token: string): Promise<any>
 {
@@ -28,6 +30,32 @@ export async function followup_message(token: string, payload: {body:{[k:string]
 		});
 	}
 	catch (e: unknown) {}
+}
+
+export async function limits(author: APIUser): Promise<number[]>
+{
+	const req = await fetch(ServerUrl+"/v1/database/imagine/"+author.id, {
+		method: "GET",
+		headers: {
+			"Authorization": Rsa
+		}
+	});
+	const json_body = await req.json() as any;
+	const isOver = Number(json_body?.d?.lastImaginationTime) <= new Date().getTime();
+	
+	if (isOver || req.status === HttpStatusCode.NOT_FOUND)
+	{
+		fetch(ServerUrl+"/v1/database/imagine/"+author.id, {
+			method: "DELETE",
+			headers: {
+				"Authorization": Rsa
+			}
+		});
+		
+		return [0, json_body?.d?.lastImaginationTime];
+	}
+	
+	return [Array.from(json_body?.d?.imagination).length, json_body?.d?.lastImaginationTime];
 }
 
 export async function makeOneImage(images: any): Promise<Buffer>
@@ -86,4 +114,30 @@ export async function storeInStorage(generated: any, upscaled: boolean = false, 
 			files: generated
 		}) as APIMessage;
 	}
+}
+
+export async function update_metadata(author: APIUser, generatedUrl: string): Promise<void>
+{
+	const doreq = async (method: string, payload: unknown, ex: string) => {
+		return await fetch(ServerUrl+"/v1/database"+ex, {
+			method,
+			headers: {
+				"Authorization": Rsa,
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(payload)
+		});
+	}
+	
+	let update_data = await doreq("PATCH", {
+		$push: {
+			imagination: generatedUrl
+		}
+	}, `/imagine/${author.id}`);
+	
+	if (update_data.status === HttpStatusCode.NOT_FOUND) update_data = await doreq("POST", {
+		_id: author.id,
+		lastImaginationTime: new Date().getTime() + 86400000,
+		imagination: [generatedUrl]
+	}, "/imagine");
 }

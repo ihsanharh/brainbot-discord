@@ -1,9 +1,10 @@
 import { fetch } from 'undici';
 
 import Command from "./base";
-import { Rsa, ServerUrl } from "../../utils/config";
+import { ImagineLimits, Rsa, ServerUrl } from "../../utils/config";
 import { PermissionFlagsBits, InteractionResponseType, MessageFlags } from "../../typings";
 import * as Queue from "../../managers/Cache";
+import { limits } from "../../stablediffusion/addition";
 import { generate } from "../../stablediffusion/imagine";
 
 const ImagineCommand = {
@@ -35,6 +36,15 @@ class Imagine extends Command
 	async execute(): Promise<void>
 	{
 		const prompt: string = this.get_options("prompt") as string;
+		const rate_limits: number = await limits(this.author);
+		
+		if (rate_limits[0] >= 5) return this.reply({
+			type: InteractionResponseType.ChannelMessageWithSource,
+			data: {
+				content: `Due to extreme demand, The imagine command including upscaler is limited to ${ImagineLimits} uses per day. You'll be able to use it again <t:${Math.floor(rate_limits[1]/1000)}:R>`,
+				flags: MessageFlags.Ephemeral
+			}
+		});
 		
 		if (await Queue.has(`imagine_${this.author?.id}`)) return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
@@ -45,7 +55,7 @@ class Imagine extends Command
 		});
 		else await Queue.set(`imagine_${this.author?.id}`);
 		
-		generate(prompt, this.author, this.command?.token);
+		generate(prompt, this.author, this.command?.token, rate_limits[0]);
 		return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {

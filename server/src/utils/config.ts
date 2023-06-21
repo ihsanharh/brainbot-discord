@@ -7,6 +7,7 @@ export const DiscordAppPubKey: string = (AppMode === 0)? String(process.env.APP_
 export const DiscordChannelStorage: string = String(process.env.DISCORD_CHANNEL_STORAGE);
 export const DiscordCommandChannel: string = String(process.env.DISCORD_COMMAND_CHANNEL);
 export const DatabaseUrl: string = String(process.env.DATABASE_URL);
+export const ImagineLimits: number = 5;
 export const Rsa: string = String(process.env.SERVER_RSA);
 export const ServerPort: string = (AppMode === 0)? String(process.env.SERVER_PORT): String(Number(process.env.SERVER_PORT)+1);
 export const ServerUrl: string = String(process.env.SERVER_URL).replace("$SERVER_PORT", ServerPort);

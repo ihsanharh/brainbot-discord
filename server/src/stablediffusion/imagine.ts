@@ -1,16 +1,16 @@
 import { fetch, Response } from 'undici';
 
 import * as Cache from "../managers/Cache";
-import { delete_original_response, storeInStorage, makeOneImage, followup_message } from "./addition";
-import { DiscordAppId, SdUrl } from "../utils/config";
+import { delete_original_response, storeInStorage, makeOneImage, followup_message, update_metadata } from "./addition";
+import { DiscordAppId, ImagineLimits, SdUrl } from "../utils/config";
 import { b64toab } from "../utils/functions";
 import { res } from "../utils/res";
-import { APIButtonComponentWithCustomId, APIMessage, APIUser, HttpStatusCode, Routes } from "../typings";
+import { APIButtonComponentWithCustomId, APIMessage, APIUser, HttpStatusCode, MessageFlags, Routes } from "../typings";
 
 export const ModelPath: string = "ai-forever/kandinsky-2";
 export const ModelVersion: string = "601eea49d49003e6ea75a11527209c4f510a93e2112c969d548fbb45b9c4f19f";
 
-export async function generate(prompt: string, author: APIUser, token: string): Promise<void>
+export async function generate(prompt: string, author: APIUser, token: string, limits: number): Promise<void>
 {
 	fetch(SdUrl[0], {
 		method: "POST",
@@ -67,10 +67,11 @@ export async function generate(prompt: string, author: APIUser, token: string): 
 				})
 			}
 			
+			update_metadata(author, data.id);
 			delete_original_response(token);
 			followup_message(token, {
 				body: {
-					content: `**${prompt}** - <@${author?.id}> (Completed.)`,
+					content: `**${prompt}** - <@${author?.id}> (Completed.) [${limits+1}/${ImagineLimits}]`,
 					components: [
 						{
 							type: 1,
@@ -87,5 +88,14 @@ export async function generate(prompt: string, author: APIUser, token: string): 
 				],
 			});
 		});
+	}).catch(async (err: unknown) => {
+		delete_original_response(token);
+		followup_message(token, {
+			body: {
+				content: `I can't imagine your prompt because my GPU is heated right now ={. Try again later!`,
+				flags: MessageFlags.Ephemeral
+			}
+		});
+		await Cache.remove(`imagine_${author?.id}`);
 	});
 }

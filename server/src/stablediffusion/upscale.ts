@@ -1,7 +1,7 @@
 import { fetch } from 'undici';
 
-import { followup_message, storeInStorage } from "./addition";
-import { DiscordAppId, DiscordChannelStorage, SdUrl } from "../utils/config";
+import { followup_message, limits, storeInStorage, update_metadata } from "./addition";
+import { DiscordAppId, DiscordChannelStorage, ImagineLimits, SdUrl } from "../utils/config";
 import { b64toab } from "../utils/functions";
 import { res } from "../utils/res";
 import { APIButtonComponentWithCustomId, APIInteraction, APIMessage, APIUser, MessageFlags, Routes } from "../typings";
@@ -14,6 +14,7 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 	res.get(Routes.channelMessage(DiscordChannelStorage, dataId)).then(async (data: any) => {
 		var user: APIUser = interaction?.member?.user ?? interaction?.user as APIUser;
 		var prompt = String(interaction.message?.content).substr(0, String(interaction.message?.content).lastIndexOf("-"));
+		const rate_limits: number = await limits(user);
 		
 		if (!checked && data?.thread) {
 			res.get(Routes.channelMessages(data?.thread.id)).then((upscaled_images: any) => {
@@ -25,7 +26,7 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 					fetch(this_upscaled_images?.url).then(async (res) => {
 						followup_message(interaction?.token, {
 							body: {
-						    content: `${prompt} - Upscaled by <@${user.id}>`,
+						    content: `${prompt} - Upscaled by <@${user.id}> [${rate_limits[0]}/${ImagineLimits}]`,
 					    },
 					    files: [
 					    	{
@@ -39,6 +40,12 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 				};
 			});
 		}
+		else if (rate_limits[0] >= ImagineLimits) return followup_message(interaction?.token, {
+			body: {
+				content: `Due to extreme demand, The imagine command including upscaler is limited to ${ImagineLimits} uses per day. You'll be able to use it again <t:${Math.floor(rate_limits[1]/1000)}:R>`,
+				flags: MessageFlags.Ephemeral
+			}
+		})
 		else followup_message(interaction?.token, {
 			body: {
 				content: `Upscalling image **#${imageIndex+1}** with ${prompt} - (Upscalling by 4x)`,
@@ -68,15 +75,24 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 				  }
 			  ];
 			  
-			  storeInStorage(files, true, data);
+			  storeInStorage(files, true, data).then((msg: APIMessage) => {
+			  	update_metadata(user, msg.id);
+			  });
 			  res.delete(Routes.webhookMessage(DiscordAppId, interaction?.token, followupMessage?.id));
 			  followup_message(interaction?.token, {
 				  body: {
-					  content: `${prompt} - Upscaled by <@${user.id}>`,
+					  content: `${prompt} - Upscaled by <@${user.id}> [${rate_limits[0]+1}/${ImagineLimits}]`,
 				  },
 				  files
 			  });
 		  });
+		}).catch((err: unknown) => {
+			followup_message(interaction?.token, {
+				body: {
+					content: `I can't upscale the requested image because my gpu is heated right now ={. Try again later!`,
+					flags: MessageFlags.Ephemeral
+				}
+			})
 		});
 	}).catch(console.log);
 }
