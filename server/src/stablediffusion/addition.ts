@@ -41,7 +41,7 @@ export async function limits(author: APIUser): Promise<number[]>
 		}
 	});
 	const json_body = await req.json() as any;
-	const isOver = Number(json_body?.d?.lastImaginationTime) <= new Date().getTime();
+	const isOver = new Date().getTime() >= Number(json_body?.d?.lastImaginationTime);
 	
 	if (isOver || req.status === HttpStatusCode.NOT_FOUND)
 	{
@@ -135,9 +135,16 @@ export async function update_metadata(author: APIUser, generatedUrl: string): Pr
 		}
 	}, `/imagine/${author.id}`);
 	
+	const localMidnight = new Date();
+	localMidnight.setDate(localMidnight.getDate() + 1) // add 1 to get the next day's date
+	localMidnight.setHours(0); // set the clock to midnight at 00:00
+	localMidnight.setMinutes(0);
+	localMidnight.setSeconds(0);
+	localMidnight.setMilliseconds(0);
+	
 	if (update_data.status === HttpStatusCode.NOT_FOUND) update_data = await doreq("POST", {
 		_id: author.id,
-		lastImaginationTime: new Date().getTime() + 86400000,
+		lastImaginationTime: localMidnight.getTime(),
 		imagination: [generatedUrl]
 	}, "/imagine");
 }
