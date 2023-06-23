@@ -14,7 +14,7 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 	res.get(Routes.channelMessage(DiscordChannelStorage, dataId)).then(async (data: any) => {
 		var user: APIUser = interaction?.member?.user ?? interaction?.user as APIUser;
 		var prompt = String(interaction.message?.content).substr(0, String(interaction.message?.content).lastIndexOf("-"));
-		const rate_limits: number = await limits(user);
+		const rate_limits: number[] = await limits(user);
 		
 		if (!checked && data?.thread) {
 			res.get(Routes.channelMessages(data?.thread.id)).then((upscaled_images: any) => {

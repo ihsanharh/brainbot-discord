@@ -36,7 +36,7 @@ class Imagine extends Command
 	async execute(): Promise<void>
 	{
 		const prompt: string = this.get_options("prompt") as string;
-		const rate_limits: number = await limits(this.author);
+		const rate_limits: number[] = await limits(this.author);
 		
 		if (rate_limits[0] >= 5) return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
