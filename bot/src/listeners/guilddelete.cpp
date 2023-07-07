@@ -1,6 +1,5 @@
 #include "listeners.h"
 #include "xtra/alert.h"
-#include "HttpStatusCodes_C++11.h"
 
 void Listeners::onGuildDelete(const dpp::guild_delete_t &event)
 {

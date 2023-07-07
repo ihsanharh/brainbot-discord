@@ -1,8 +1,4 @@
 #include "xtra/alert.h"
-#include "nlohmann/json.hpp"
-#include "constants.h"
-#include "httplib.h"
-#include "HttpStatusCodes_C++11.h"
 
 void alert_join_leave(const std::string& message)
 {
