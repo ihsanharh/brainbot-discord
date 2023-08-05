@@ -42,7 +42,7 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 	}
 	else if (id && String(id).length < 12 || req.body && req.body?._id && String(req.body?._id).length < 12)
 	{
-		statusCode = HttpStatusCode.LENGTH_REQUIRED;
+		statusCode = HttpStatusCode.BAD_REQUEST;
 		m = "Common.QueryParamsLength" 
 		p = ["id", "12 characters"];
 	}
@@ -57,7 +57,7 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				
 				if (result)
 				{
-					statusCode = HttpStatusCode.FOUND;
+					statusCode = HttpStatusCode.OK;
 					m = "Common.Found"
 				}
 				else
@@ -84,7 +84,7 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				}
 				else
 				{
-					statusCode = HttpStatusCode.CONFLICT;
+					statusCode = HttpStatusCode.ACCEPTED;
 					m = isExisting? "Database.AlreadyExist": "Common.NotFound"
 					result = isExisting? isExisting: null;
 				}
