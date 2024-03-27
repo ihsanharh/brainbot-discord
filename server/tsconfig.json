@@ -14,5 +14,5 @@
 		"target": "es2021",
 		"allowJs": true
 	},
-	"include": ["./src/**/*", "environment.d.ts"]
+	"include": ["./src/**/*", "./src/**/*.json", "environment.d.ts"]
 }

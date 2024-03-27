@@ -3,7 +3,6 @@ import { NextFunction, Request, Response, Router } from 'express';
 
 import { APIApplicationCommand, HttpStatusCode } from "../../typings";
 import { Rsa } from "../../utils/config";
-import { verifyPrivateRouting } from "../../utils/middleware";
 import { createApplicationCommand, deleteApplicationCommand, getAllApplicationCommands, updateApplicationCommand } from "../../managers/ApplicationCommand";
 
 const CommandsRoute: Router = Router();
@@ -29,7 +28,7 @@ CommandsRoute.get("/update", async (req: Request, res: Response, next: NextFunct
 }, async (req: Request, res: Response) => {
 	var existing_application_commands: APIApplicationCommand[] | null = await getAllApplicationCommands();
 	const available_commands = fs.readdirSync(__dirname.replace("routes/_commands", "interaction/commands"))
-	.map((available_command: string) => available_command.substr(0, available_command.length-3))
+	.map((available_command: string) => available_command.substring(0, available_command.length-3))
 	.filter((available_command: string) => !available_command.includes("base"));
 	
 	available_commands.forEach(async (command_file: string) => {

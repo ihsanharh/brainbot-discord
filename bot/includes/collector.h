@@ -5,6 +5,6 @@
 #include "nlohmann/json.hpp"
 #include "HttpStatusCodes_C++11.h"
 
-void _collectorAck(const dpp::message_create_t& event);
+void _collectorAck(const std::string& raw_event);
 
 #endif // BRAINBOT_COLLECTOR_H

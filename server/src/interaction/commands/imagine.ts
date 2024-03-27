@@ -1,7 +1,5 @@
-import { fetch } from 'undici';
-
 import Command from "./base";
-import { ImagineLimits, Rsa, ServerUrl } from "../../utils/config";
+import { Integer } from "../../constants/values"
 import { PermissionFlagsBits, InteractionResponseType, MessageFlags } from "../../typings";
 import * as Queue from "../../managers/Cache";
 import { limits } from "../../stablediffusion/addition";
@@ -38,10 +36,10 @@ class Imagine extends Command
 		const prompt: string = this.get_options("prompt") as string;
 		const rate_limits: number[] = await limits(this.author);
 		
-		if (rate_limits[0] >= 5) return this.reply({
+		if (rate_limits[0] >= Integer.ImagineTaskLimit) return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content: `Due to extreme demand, The imagine command including upscaler is limited to ${ImagineLimits} uses per day. You'll be able to use it again <t:${Math.floor(rate_limits[1]/1000)}:R>`,
+				content: `Due to extreme demand, The Imagine command (including the upscaler) is limited to ${Integer.ImagineTaskLimit} uses per day. You'll be able to use it again <t:${Math.floor(rate_limits[1]/1000)}:R>`,
 				flags: MessageFlags.Ephemeral
 			}
 		});
@@ -49,12 +47,12 @@ class Imagine extends Command
 		if (await Queue.has(`imagine_${this.author?.id}`)) return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content: `\`You have one image generation in progress! Please wait for it to complete.\` <@${this.author?.id}>`,
+				content: "`You have one task in progress. Please wait for its completion.`",
 				flags: MessageFlags.Ephemeral
 			}
 		});
-		else await Queue.set(`imagine_${this.author?.id}`);
 		
+		Queue.set(`imagine_${this.author?.id}`, `${Date.now()}`, Integer.ImagineTaskTimeout);
 		generate(prompt, this.author, this.command?.token, rate_limits[0]);
 		return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,

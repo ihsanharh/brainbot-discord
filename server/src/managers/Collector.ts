@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 
 import { APIInteraction, APIMessage, CollectorData } from "../typings";
+import redis from "../services/redis";
 
 /* Message Components Collector */
 /* used for collecting interaction from discord with message components type
@@ -20,6 +21,8 @@ import { APIInteraction, APIMessage, CollectorData } from "../typings";
  * export function collectorCollect(data: CollectorData, interaction: Interaction) {
  *   // do something...
  * }
+ * // IMPORTANT: to make the collect event work you have to include the colector state in every custom_id of your components.
+ * // e.g. button_help.collectorstate
  *
  * // listen to the end of collector life, similar to collect event
  * export function collectorEnd(data: CollectorData) {
@@ -29,21 +32,31 @@ import { APIInteraction, APIMessage, CollectorData } from "../typings";
  * // see help command file for actual usage.
  */
 
-export const ActiveCollector: Map<string, CollectorData> = new Map<string, CollectorData>();
-
-async function _out(data: CollectorData): Promise<void>
+export async function _active_collector(): Promise<Map<string, string>>
 {
-	setTimeout(() => {
-		_end(data);
-	}, Number(data.time));
+	const collectors = new Map();
+
+	for await (const key of redis.scanIterator({ MATCH: "clr0*", COUNT: 100 }))
+	{
+		const collector = await redis.GET(key);
+		collectors.set(key, collector);
+	}
+
+	return collectors;
 }
 
-export async function _collect(data: CollectorData, interaction: APIInteraction): Promise<void>
+export async function collector_sub(): Promise<void>
 {
-	const pwd = path.resolve(data.pwd, data.name);
-	const CommandFile = await import(pwd);
-	
-	if (CommandFile && CommandFile._collectorCollect) CommandFile._collectorCollect(data, interaction);
+	const collector_subscriber = redis.duplicate();
+	await collector_subscriber.connect();
+
+	await collector_subscriber.PSUBSCRIBE("*expired", async (message: any, channel: any) => {
+		if (message.startsWith("clrs0"))
+		{
+			const get_expired_collector = await redis.GET(message.replace("clrs0", "clr0"));
+			if (get_expired_collector) _end(JSON.parse(get_expired_collector) as CollectorData);
+		}
+	});
 }
 
 async function _end(data: CollectorData): Promise<void>
@@ -53,10 +66,11 @@ async function _end(data: CollectorData): Promise<void>
 	
 	if (CommandFile && CommandFile._collectorEnd)
 	{
+		const getlatestData = await redis.GET("clr0" + data.id);
+		var latestData: CollectorData;
 		
-		const latestData = ActiveCollector.get(data.id);
-		
-		if (!latestData) return;
+		if (!getlatestData) return;
+		latestData = JSON.parse(getlatestData) as CollectorData;
 		if (!latestData?.collected)
 		{
 			Object.defineProperty(latestData, "collected", {
@@ -77,47 +91,47 @@ async function _end(data: CollectorData): Promise<void>
 		
 		CommandFile._collectorEnd(latestData);
 	}
-	
-	ActiveCollector.delete(data.id);
 }
 
 export async function createCollector(data: CollectorData): Promise<void>
 {
-	ActiveCollector.set(data.id, data);
-	_out(data);
+	redis.PSETEX("clrs0" + data.id, Number(data.time), "0");
+	redis.PSETEX("clr0" + data.id, Number(Number(data.time) + 10000), JSON.stringify(data));
 }
 
 export async function collected(data: CollectorData, interaction: APIInteraction): Promise<void>
 {
-	const currentData = ActiveCollector.get(data.id);
+	const currentTTL = await redis.PTTL("clr0" + data.id);
+	const currentData = await redis.GET("clr0" + data.id);
 	
 	if (currentData)
 	{
-		const newData = { ...currentData };
+		const newData = JSON.parse(currentData);
 		
 		if (Array.isArray(newData?.collected)) newData?.collected.push(interaction);
 		else Object.defineProperty(newData, "collected", {
 			value: [interaction],
 			enumerable: true
 		});
-		
-		ActiveCollector.set(currentData.id, newData);
+
+		if (data.expand) redis.PSETEX("clrs0" + data.id, Number(data.time), "0");
+		redis.PSETEX("clr0" + newData.id, data.expand? Number(data.time) + 10000: currentTTL, JSON.stringify(newData));
 	}
 }
 
 export async function setMessage(state: string, message: APIMessage): Promise<void>
 {
-	const currentData = ActiveCollector.get(state);
-	
+	const currentData = await redis.GET(state);
+
 	if (currentData)
 	{
-		const newData = { ...currentData };
+		const newData = JSON.parse(currentData);
 		
 		Object.defineProperty(newData, "message", {
 			value: message,
 			enumerable: true
 		});
-		
-		ActiveCollector.set(currentData.id, newData)
+
+		redis.PSETEX(state, Number(newData.time), JSON.stringify(newData));
 	}
 }

@@ -1,0 +1,48 @@
+version: "3.7"
+
+services:
+  redis:
+    image: redis:7.2.3-alpine
+    command: >
+      --notify-keyspace-events KEA
+    networks:
+      - brainbot_dev
+  
+  server:
+    entrypoint: sh -c "npm install && npm run dev"
+    depends_on:
+      - redis
+    env_file: ./.env.dev
+    image: node:20.11-alpine
+    networks:
+      - brainbot_dev
+    ports:
+      - 4095:4095
+    volumes:
+      - type: bind
+        source: ./server/
+        target: /app/server/
+    working_dir: /app/server
+
+  bot:
+    entrypoint: sh -c "cd bot && cmake -B ./build && cmake --build ./build && ./build/brainbot"
+    depends_on:
+      - server
+    image: brainbot-env:0.0.5
+    networks:
+      - brainbot_dev
+    tty: true
+    volumes:
+      - type: bind
+        source: ./bot
+        target: /app/bot
+      - type: bind
+        source: ./chat/list.txt
+        target: /app/bot/chat/list.txt
+      - type: bind
+        source: ./.env.dev
+        target: /app/bot/.env
+    working_dir: /app
+
+networks:
+  brainbot_dev:

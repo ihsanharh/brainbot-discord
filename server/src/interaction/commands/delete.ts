@@ -1,11 +1,6 @@
 import { fetch, Response } from 'undici';
 
-import {
-	ApplicationCommandOptionType,
-	HttpStatusCode,
-	InteractionResponseType,
-	PermissionFlagsBits
-} from "../../typings";
+import { HttpStatusCode, InteractionResponseType, PermissionFlagsBits, OwnResponsePayload } from "../../typings";
 import { Chat } from "../../schemas/chat";
 import { Rsa, ServerUrl } from "../../utils/config";
 import Command from "./base";
@@ -29,18 +24,19 @@ class Delete extends Command
 	
 	async execute(): Promise<void>
 	{
-		const get_guild_data = await fetch(`${ServerUrl}/database/guild/${this.command.guild_id}`, {
+		const get_guild_data = await fetch(`${ServerUrl}/v1/database/chat/${this.command.guild_id}`, {
 			method: "GET",
 			headers: {
 				"Accept": "application/json",
 				"Authorization": Rsa
 			}
 		}) as Response;
-		const json_guild_data = await get_guild_data.json() as Chat|any;
+		const json_body = await get_guild_data.json() as OwnResponsePayload;
+		const json_guild_data = json_body.d as Chat;
 		
 		if (get_guild_data.ok && json_guild_data.channel !== null)
 		{
-			fetch(`${ServerUrl}/database/guild/${this.command.guild_id}`, {
+			fetch(`${ServerUrl}/v1/database/chat/${this.command.guild_id}`, {
 				method: "PATCH",
 				headers: {
 					"Authorization": Rsa,

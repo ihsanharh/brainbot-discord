@@ -1,6 +1,9 @@
 export const Common: {
 	[k: string]: string;
 } = {
+	Accepted: "@0: Accepted.",
+	Created: "@0: Created.",
+	Deleted: "@0: Deleted",
 	DoesNotExist: "@0: @1 Does Not Exist.",
 	Found: "@0: Found.",
 	InternalServerError: "@0: Internal Server Error.",
@@ -23,5 +26,5 @@ export const Database: {
 export const Cache: {
 	[k: string]: string;
 } = {
-	ProvideValueParamsToSet: "@0: Provide Value In Body!"
+	GreaterThanOneTtl: "@0: The ttl must be higher than 1."
 }

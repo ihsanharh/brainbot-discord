@@ -1,53 +1,102 @@
 import { fetch, Response } from 'undici';
 
 import * as Cache from "../managers/Cache";
-import { delete_original_response, storeInStorage, makeOneImage, followup_message, update_metadata } from "./addition";
-import { DiscordAppId, ImagineLimits, SdUrl } from "../utils/config";
+import { Integer } from "../constants/values";
+import { edit_original_response, delete_original_response, storeInStorage, check_prediction, makeOneImage, followup_message, update_metadata } from "./addition";
+import { SdUrl } from "../utils/config";
 import { b64toab } from "../utils/functions";
-import { res } from "../utils/res";
-import { APIButtonComponentWithCustomId, APIMessage, APIUser, HttpStatusCode, MessageFlags, Routes } from "../typings";
+import { APIButtonComponentWithCustomId, APIMessage, APIUser, CheckPredictionType, MessageFlags, PredictionObject } from "../typings";
+import logger from "../services/logger";
 
-export const ModelPath: string = "ai-forever/kandinsky-2";
-export const ModelVersion: string = "601eea49d49003e6ea75a11527209c4f510a93e2112c969d548fbb45b9c4f19f";
+export const ModelPath = "ai-forever/kandinsky-2.2";
+export const ModelVersion: string = "ea1addaab376f4dc227f5368bbd8eff901820fd1cc14ed8cad63b29249e9d463";
 
+/**
+ * generate an image
+ */
 export async function generate(prompt: string, author: APIUser, token: string, limits: number): Promise<void>
-{
-	fetch(SdUrl[0], {
+{ 
+	// send POST to the gpu server
+	fetch(SdUrl, {
 		method: "POST",
 		headers: {
-			"Authorization": "brainbotstablediffusion-1",
+			"Accept": "application/json",
 			"Content-Type": "application/json"
 		},
 		body: JSON.stringify({
-			model: `${ModelPath}:${ModelVersion}`,
-			prompt: prompt,
-			batch_size: 4,
-			guidance_scale: 6,
-			t: token,
-			asbuffer: true,
+			model: ModelPath,
+			version: ModelVersion,
+			input: {
+				height: 512,
+				width: 512,
+				num_inference_steps: 75,
+                num_inference_steps_prior: 25,
+				prompt,
+				num_outputs: 4
+			}
 		})
-	}).then(async (prediction: any) => {
-		if (prediction?.status === HttpStatusCode.NO_CONTENT || prediction.status === HttpStatusCode.INTERNAL_SERVER_ERROR)
+	}).then(async (res: Response) => {
+		if (!res.ok)
 		{
-			delete_original_response(token);
-			followup_message(token, {
+			logger.warn(res, "Error with the gpu server");
+			edit_original_response(token, {
 				body: {
-					content: "Something went wrong={, The imagination was cancelled."
+					content: "Something went wrong, The imagination was cancelled."
 				}
 			});
+			
+			return;
+		}
+
+		let prediction = await res.json() as PredictionObject;
+		const predictionStatus = ['canceled', 'succeeded', 'failed'];
+		var generated: {data:Buffer;name:string;contentType:string;}[] = [];
+		var upscaleButtons: APIButtonComponentWithCustomId[] = [];
+		let currPred: CheckPredictionType = {
+			prediction
+		};
+		
+		edit_original_response(token, {
+			body: {
+				content: `**${prompt}** - <@${author?.id}> (${prediction.status})`
+			}
+		});
+		
+		// wait for the status to become one of predictionStatus
+		while (!predictionStatus.includes(prediction.status))
+		{
+			currPred = await check_prediction(token, currPred);
+			prediction = currPred.prediction as PredictionObject;
+		}
+		
+		Cache.remove(`imagine_${author?.id}`);
+		
+		if (prediction.status === "cancelled")
+		{
+			edit_original_response(token, {
+				body: {
+					content: "The imagination was cancelled."
+				}
+			});
+			
+			return;
+		}
+		else if (prediction.status === "failed")
+		{
+			edit_original_response(token, {
+				body: {
+					content: "Failed to imagine your imagination."
+				}
+			})
+			
 			return;
 		}
 		
-		prediction = await prediction.json();
-		var generated: {data:Buffer;name:string;contentType:string;}[] = [];
-		var upscaleButtons: APIButtonComponentWithCustomId[] = [];
-		
-		await Cache.remove(`imagine_${author?.id}`);
-		if (!prediction?.output) return;
+		if (!prediction?.output || prediction.output && prediction.output.length < 1) return;
 		
 		for (let i = 0; i < prediction?.output?.length; i++)
 		{
-			let contentType = String(prediction?.output[i].url).substr(String(prediction?.output[i].url).lastIndexOf(".")+1);
+			let contentType = String(prediction?.output[i].url).substring(String(prediction?.output[i].url).lastIndexOf(".")+1);
 			
 			generated.push({
 				data: Buffer.from(b64toab(prediction.output[i].data)),
@@ -71,7 +120,7 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 			delete_original_response(token);
 			followup_message(token, {
 				body: {
-					content: `**${prompt}** - <@${author?.id}> (Completed.) [${limits+1}/${ImagineLimits}]`,
+					content: `**${prompt}** - <@${author?.id}> (Completed in ${prediction.metrics.predict_time}s.) [${limits+1}/${Integer.ImagineTaskLimit}]`,
 					components: [
 						{
 							type: 1,
@@ -89,13 +138,13 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 			});
 		});
 	}).catch(async (err: unknown) => {
-		delete_original_response(token);
-		followup_message(token, {
+		Cache.remove(`imagine_${author?.id}`);
+		logger.warn(err, "gpu server failed to imagine");
+		edit_original_response(token, {
 			body: {
 				content: `I can't imagine your prompt because my GPU is heated right now ={. Try again later!`,
 				flags: MessageFlags.Ephemeral
 			}
 		});
-		await Cache.remove(`imagine_${author?.id}`);
 	});
 }

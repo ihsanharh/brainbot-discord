@@ -11,10 +11,30 @@ namespace Constants
 	
 	namespace Message
 	{
-		static const std::string AddedBack           = "Oh hi again! Thanks for adding me back <3";
-		static const std::string ContinueTalking     = "\n\nYou can continue talking to me in <#<#cid>> or run </setup:</setup>> command if you want to change the channel.";
-		static const std::string FirstTime           = "Hey! Brain Bot is here, I'm an AI-Powered Chat Bot. Thanks for adding me to your server!";
-		static const std::string SetupFirstTime      = "\n\nYou can start talking to me by sending me a DM or by running </setup:</setup>> to set the chat channel in this server. Use </help:</help>> to display the help menu.";
+		static const std::string AddedBack           = "Hello again! Thanks for re-adding me. <3";
+		static const std::string ContinueTalking     = "\n\nYou can keep our chat going in <#<#cid>>, or if you're in the mood for a change, just use the </setup:</setup>> command to switch up the channel!";
+		static const std::string FirstTime           = "Hello! Brain Bot is here—I'm an AI-powered chatbot. Thank you for adding me to your server!";
+		static const std::string SetupFirstTime      = "\n\nFeel free to slide into my DMs, or set up a channel for our conversation using </setup:</setup>>. Need assistance? Give </help:</help>> a shot!";
+	}
+	
+	namespace Regex
+	{
+		static std::string Brainbot = R"((?:b|B)(?:r|R)(?:a|A)(?:i|I)(?:n|N)\s?(?:b|B)(?:o|O)(?:t|T))";
+		static std::string Cleverbot = R"((?:c|C)(?:l|L)(?:e|E)(?:v|V)(?:e|E)(?:r|R)\s?(?:b|B)(?:o|O)(?:t|T))";
+	}
+	
+	/**
+	 * Time To Live for redis cache, all of them in seconds except for MessageCooldown which is in milliseconds
+ 	*/
+	namespace TTL
+	{
+		static long long ChannelCache                = 90;
+		static long long GuildDataCache              = 120;
+		static long long LastMessageId               = 6;
+		static long long MeMemberCache               = 90;
+		static long long MessageCooldown             = 3500;
+		static long long Session                     = 70;
+		static long long ShadowSession               = 60;
 	}
 }
 

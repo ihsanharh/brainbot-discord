@@ -1,0 +1,8 @@
+# brainbot dev environment
+FROM brainbot-env:0.0.2
+
+WORKDIR /bot
+
+COPY . .
+
+ENTRYPOINT [ "executable" ]

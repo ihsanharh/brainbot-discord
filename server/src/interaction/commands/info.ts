@@ -1,12 +1,6 @@
 import { fetch, Response } from 'undici';
 
-import {
-	APIInteraction,
-	ApplicationCommandOptionType,
-	InteractionResponseType,
-	PermissionFlagsBits,
-	Routes
-} from "../../typings";
+import { APIInteraction, InteractionResponseType, PermissionFlagsBits, Routes } from "../../typings";
 import { DiscordAppId, ServerUrl } from "../../utils/config";
 import { res } from "../../utils/res";
 import Command from "./base";

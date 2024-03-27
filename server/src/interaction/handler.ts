@@ -1,11 +1,9 @@
-require('sharp');
-
 import { fetch } from 'undici';
 import { workerData } from 'node:worker_threads';
+import * as path from 'path';
 
-import { APIAttachment, APIInteraction, CollectorData, InteractionResponseType, InteractionType, MessageFlags, Routes } from "../typings";
+import { APIInteraction, CollectorData, InteractionResponseType, InteractionType, MessageFlags, Routes } from "../typings";
 import { respond } from "./commands/base";
-import { _collect } from "../managers/Collector";
 import { upscaler } from "../stablediffusion/upscale";
 import { DiscordCommandChannel, Rsa, ServerUrl } from "../utils/config";
 import { res } from "../utils/res";
@@ -14,7 +12,6 @@ async function main(): Promise<void>
 {
 	var { collectors, interaction } = workerData;
 	interaction = JSON.parse(interaction) as APIInteraction;
-	const ActiveCollector: Map<string, CollectorData> = new Map<string, CollectorData>(JSON.parse(collectors));
 	
 	if (interaction?.type === InteractionType.Ping)
 	{
@@ -53,29 +50,37 @@ async function main(): Promise<void>
 	{
 		const customId = interaction?.data['custom_id'];
 		const collectorState: string = customId.substring(customId.lastIndexOf(".")).substring(1);
-		const isCollector: CollectorData | undefined = ActiveCollector.get(collectorState);
-		
-		if (isCollector && isCollector?.ids.includes(interaction?.data['custom_id']))
+		const get_collector = collectors.get("clr0" + collectorState);
+
+		if (get_collector)
 		{
-			_collect(isCollector, interaction);
-			fetch(`${ServerUrl}/_collector/collect`, {
-				method: "POST",
-				headers: {
-					"Accept": "application/json",
-					"Authorization": Rsa,
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					interaction: JSON.stringify(interaction),
-					data: JSON.stringify(isCollector)
-				})
-			});
-		}
+			const isCollector: CollectorData = JSON.parse(get_collector);
+
+			const pwd = path.resolve(isCollector.pwd, isCollector.name);
+			const CommandFile = await import(pwd);
+			if (CommandFile && CommandFile._collectorCollect) CommandFile._collectorCollect(isCollector, interaction);
+
+			if (isCollector && isCollector?.ids.includes(interaction?.data['custom_id']))
+			{
+				fetch(`${ServerUrl}/_collector/collect`, {
+					method: "POST",
+					headers: {
+						"Accept": "application/json",
+						"Authorization": Rsa,
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify({
+						interaction: JSON.stringify(interaction),
+						data: JSON.stringify(isCollector)
+					})
+				});
+			}
+	    }
 		else if (customId.startsWith("imagine_upscale"))
 		{
 			var updatedButtons = [];
 			var existingComponents = interaction.message.components[0].components;
-			var selectedImageIndex = String(customId).substr(String(customId).lastIndexOf(";")).replace(";", "");
+			var selectedImageIndex = String(customId).substring(String(customId).lastIndexOf(";")).replace(";", "");
 			var selectedComponent;
 			
 			for (let i = 0; i < existingComponents.length; i++)

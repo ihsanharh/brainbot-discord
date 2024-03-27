@@ -1,23 +1,55 @@
-import { fetch } from 'undici';
+import { fetch, Response } from 'undici';
 
-import { followup_message, limits, storeInStorage, update_metadata } from "./addition";
-import { DiscordAppId, DiscordChannelStorage, ImagineLimits, SdUrl } from "../utils/config";
+import * as Cache from "../managers/Cache";
+import { followup_message, delete_followup_message, limits, storeInStorage, check_prediction, update_metadata } from "./addition";
+import { Integer } from "../constants/values";
+import { DiscordChannelStorage, SdUrl } from "../utils/config";
 import { b64toab } from "../utils/functions";
-import { res } from "../utils/res";
-import { APIButtonComponentWithCustomId, APIInteraction, APIMessage, APIUser, MessageFlags, Routes } from "../typings";
+import { res as DiscordAPI } from "../utils/res";
+import { APIButtonComponentWithCustomId, APIInteraction, APIMessage, APIUser, CheckPredictionType, MessageFlags, PredictionObject, Routes } from "../typings";
+import logger from "../services/logger";
 
-export const ModelPath: string = "jingyunliang/swinir";
+export const ModelPath = "jingyunliang/swinir";
 export const ModelVersion: string = "660d922d33153019e8c263a3bba265de882e7f4f70396546b6c9c8f9d47a021a";
 
 export async function upscaler(interaction: APIInteraction, selectedComponents: APIButtonComponentWithCustomId, dataId: string, imageIndex: number, checked?: boolean): Promise<void>
 {
-	res.get(Routes.channelMessage(DiscordChannelStorage, dataId)).then(async (data: any) => {
-		var user: APIUser = interaction?.member?.user ?? interaction?.user as APIUser;
-		var prompt = String(interaction.message?.content).substr(0, String(interaction.message?.content).lastIndexOf("-"));
-		const rate_limits: number[] = await limits(user);
+	var user: APIUser = interaction?.member?.user ?? interaction?.user as APIUser;
+	const rate_limits: number[] = await limits(user);
+	
+	if (rate_limits[0] >= Integer.ImagineTaskLimit)
+	{
+		followup_message(interaction?.token, {
+			body: {
+				content: `Due to extreme demand, The Imagine command (including the upscaler) is limited to ${Integer.ImagineTaskLimit} uses per day. You'll be able to use it again <t:${Math.floor(rate_limits[1]/1000)}:R>`,
+				flags: MessageFlags.Ephemeral
+			}
+		});
+
+		return;
+	}
+	else if (await Cache.has(`imagine_${user.id}`))
+	{
+		followup_message(interaction.token, {
+			body: {
+				content: "`You have one task in progress. Please wait for its completion.`",
+				flags: MessageFlags.Ephemeral
+			}
+		});
+
+		return;
+	};
+
+	/**
+	 * check wether the image has been upscaled before, take it from the data if present otherwise upscale it
+	 */
+	Cache.set(`imagine_${user.id}`, `${Date.now()}`, Integer.ImagineTaskTimeout);
+	DiscordAPI.get(Routes.channelMessage(DiscordChannelStorage, dataId)).then(async (data: any) => {
+		var prompt = String(interaction.message?.content).substring(0, String(interaction.message?.content).lastIndexOf("-"));
 		
-		if (!checked && data?.thread) {
-			res.get(Routes.channelMessages(data?.thread.id)).then((upscaled_images: any) => {
+		if (!checked && data?.thread)
+		{
+			DiscordAPI.get(Routes.channelMessages(data?.thread.id)).then((upscaled_images: any) => {
 				var this_upscaled_data = upscaled_images.filter((images: any) => images?.attachments[0]?.filename === `image-${imageIndex+1}.png`);
 				if (this_upscaled_data.length < 1) upscaler(interaction, selectedComponents, dataId, imageIndex, true);
 				else
@@ -26,7 +58,7 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 					fetch(this_upscaled_images?.url).then(async (res) => {
 						followup_message(interaction?.token, {
 							body: {
-						    content: `${prompt} - Upscaled by <@${user.id}> [${rate_limits[0]}/${ImagineLimits}]`,
+						    content: `${prompt} - Upscaled by <@${user.id}> [${rate_limits[0]}/${Integer.ImagineTaskLimit}]`,
 					    },
 					    files: [
 					    	{
@@ -40,59 +72,87 @@ export async function upscaler(interaction: APIInteraction, selectedComponents: 
 				};
 			});
 		}
-		else if (rate_limits[0] >= ImagineLimits) return followup_message(interaction?.token, {
+		
+		const followupMessage = await followup_message(interaction?.token, {
 			body: {
-				content: `Due to extreme demand, The imagine command including upscaler is limited to ${ImagineLimits} uses per day. You'll be able to use it again <t:${Math.floor(rate_limits[1]/1000)}:R>`,
-				flags: MessageFlags.Ephemeral
+				content: `Upscalling image **#${imageIndex+1}** with ${prompt} - (Upscalling by 4x)`
 			}
-		})
-		else followup_message(interaction?.token, {
-			body: {
-				content: `Upscalling image **#${imageIndex+1}** with ${prompt} - (Upscalling by 4x)`,
-				flags: MessageFlags.Ephemeral
-			}
-		}).then(async (followupMessage: any) => {
-			fetch(SdUrl[1], {
-				method: "POST",
-				headers: {
-					"Authorization": "brainbotstablediffusion-1",
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					model: `${ModelPath}:${ModelVersion}`,
+		}) as APIMessage;
+		
+		fetch(SdUrl, {
+			method: "POST",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"Include-B64": "true"
+			},
+			body: JSON.stringify({
+				model: ModelPath,
+				version: ModelVersion,
+				input: {
 					image: data.attachments[imageIndex].url,
-				  noise: 15,
-				  asbuffer: true,
-			  }),
-		  }).then(async (prediction: any) => {
-			  prediction = await prediction.json();
-			  let contentType = String(prediction?.output.url).substr(String(prediction?.output.url).lastIndexOf(".")+1);
-			  let files = [
-			  	{
-			  		data: Buffer.from(b64toab(prediction.output.data)),
-						name: `image-${imageIndex+1}.${contentType}`,
-						contentType
-				  }
-			  ];
-			  
-			  storeInStorage(files, true, data).then((msg: APIMessage) => {
-			  	update_metadata(user, msg.id);
-			  });
-			  res.delete(Routes.webhookMessage(DiscordAppId, interaction?.token, followupMessage?.id));
-			  followup_message(interaction?.token, {
-				  body: {
-					  content: `${prompt} - Upscaled by <@${user.id}> [${rate_limits[0]+1}/${ImagineLimits}]`,
-				  },
-				  files
-			  });
-		  });
-		}).catch((err: unknown) => {
+				    jpeg: 40,
+				    noise: 15,
+				    task_type: "Real-World Image Super-Resolution-Large"
+				}
+			}),
+		}).then(async (res: Response) => {
+			let prediction = await res.json() as PredictionObject;
+			const predictionStatus = ["succeeded", "failed", 'cancelled'];
+			var currPred: CheckPredictionType = {
+				prediction
+			};
+
+			while (!predictionStatus.includes(prediction.status))
+			{
+				currPred = await check_prediction(interaction.token, currPred, followupMessage?.id);
+				prediction = currPred.prediction as PredictionObject;
+			}
+
+			Cache.remove(`imagine_${user.id}`);
+			delete_followup_message(interaction.token, followupMessage?.id);
+
+			if (prediction.status === "cancelled")
+			{
+				followup_message(interaction.token, {
+					body: {
+						content: "The upscale task was cancelled",
+						flags: MessageFlags.Ephemeral
+					}
+				});
+
+				return;
+			}
+			else if (prediction.status === "failed")
+			{
+				followup_message(interaction.token, {
+					body: {
+						content: "Failed to upscale the requested image.",
+						flags: MessageFlags.Ephemeral
+					}
+				});
+
+				return;
+			}
+
+			let contentType = String(prediction?.output[0].url).substring(String(prediction?.output[0].url).lastIndexOf(".")+1);
+			let files = [
+				{
+					data: Buffer.from(b64toab(prediction?.output[0].data)),
+					name: `image-${imageIndex+1}.${contentType}`,
+					contentType
+				}
+			];
+			
+			storeInStorage(files, true, data).then((msg: APIMessage) => {
+				update_metadata(user, msg.id);
+			});
 			followup_message(interaction?.token, {
 				body: {
-					content: `I can't upscale the requested image because my gpu is heated right now ={. Try again later!`,
-					flags: MessageFlags.Ephemeral
-				}
-			})
+					content: `${prompt} - Upscaled by <@${user.id}> [${rate_limits[0]+1}/${Integer.ImagineTaskLimit}]`,
+				},
+				files
+			});
 		});
-	}).catch(console.log);
+	}).catch((reason: unknown) => logger.error(reason));
 }

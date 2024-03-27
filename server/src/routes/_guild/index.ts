@@ -1,32 +1,32 @@
 import { Request, Response, Router, json } from 'express';
 
-import { APIGuild, GuildCD, HttpStatusCode } from "../../typings";
+import { HttpStatusCode } from "../../typings";
 import { verifyPrivateRouting } from "../../utils/middleware";
-import { _add, _delete, getGuilds } from "../../managers/Guild";
+import { _add, _delete } from "../../managers/Guild";
 import { getGuildChannels, getGuildMember, getGuildMemberPermissionsForChannel } from "../../utils/functions";
+import { compute_permission } from "../../utils/permissions";
+import redis from "../../services/redis";
 
 const GuildRoute: Router = Router();
 
-GuildRoute.use(json({ limit: "100mb" }));
+GuildRoute.use(json());
 
 GuildRoute.get("/count", async (req: Request, res: Response) => {
-	const guilds: APIGuild[] = await getGuilds() as APIGuild[];
-	console.log(guilds);
+	let guild_count = 0;
+
+	for await (const shard of redis.scanIterator({
+		TYPE: "string",
+		MATCH: "shard_*:guild_count",
+		COUNT: 100
+	}))
+	{
+		const get_guild_count: string|null = await redis.get(shard);
+		if (get_guild_count) guild_count += Number(get_guild_count);
+	}
+
 	return res.status(HttpStatusCode.OK).json({
-		"count": guilds? `${guilds.length}`: `1`
+		count: guild_count
 	});
-});
-
-GuildRoute.post("/create", verifyPrivateRouting, async (req: Request, res: Response) => {
-	const created: GuildCD = JSON.parse(JSON.stringify(req.body));
-	_add(created);
-	return res.status(HttpStatusCode.OK).end();
-});
-
-GuildRoute.delete("/delete", verifyPrivateRouting, async (req: Request, res: Response) => {
-	const deleted: GuildCD = JSON.parse(JSON.stringify(req.body));
-	_delete(deleted);
-	return res.status(HttpStatusCode.OK).end();
 });
 
 GuildRoute.get("/:guild_id/channels", verifyPrivateRouting, async (req: Request, res: Response) => {
@@ -46,14 +46,11 @@ GuildRoute.get("/:guild_id/channels", verifyPrivateRouting, async (req: Request,
 		{
 			for (let i = 0; i < channel_list.length; i++)
 			{
-				const perms = await getGuildMemberPermissionsForChannel(asGuildMember, channel_list[i]);
+				const perms = await compute_permission(asGuildMember, channel_list[i]);
 				
-				Object.defineProperty(channel_list[i], "req_user_permissions", {
+				Object.defineProperty(channel_list[i], "own_permissions", {
 					enumerable: true,
-					value: {
-						"allow": String(perms.allow),
-						"deny": String(perms.deny)
-					}
+					value: perms
 				});
 			}
 		}

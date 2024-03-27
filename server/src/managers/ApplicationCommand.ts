@@ -1,9 +1,18 @@
 import { APIApplicationCommand, Routes, command_metadata } from "../typings";
 import { res } from "../utils/res";
 import { DiscordAppId } from "../utils/config";
+import redis from "../services/redis";
+import logger from "../services/logger";
 
-export const ApplicationCommandsCache: Map<string, APIApplicationCommand> = new Map<string, APIApplicationCommand>();
+/**
+ * @description - Commands Manager, used to register, delete or update an application command
+ */
 
+/**
+ * create a application command to discord
+ * @param {command_metadata} application_command - command metadata
+ * @return {void}
+ */
 export async function createApplicationCommand(application_command: command_metadata): Promise<void>
 {
 	try
@@ -12,50 +21,78 @@ export async function createApplicationCommand(application_command: command_meta
 			body: application_command
 		}) as APIApplicationCommand;
 		
-		ApplicationCommandsCache.set(created_application_command.id, created_application_command);
+		redis.HSET("commands", created_application_command.id, JSON.stringify(created_application_command));
 	}
 	catch(error: unknown)
 	{
-		console.error(error);
+		logger.error(error);
 	}
 }
 
+/**
+ * delete application command from discord
+ * @param {APIApplicationCommand} application_command + the application command
+ * @return {void}
+ */
 export async function deleteApplicationCommand(application_command: APIApplicationCommand): Promise<void>
 {
 	try
 	{
 		await res.delete(Routes.applicationCommand(DiscordAppId, application_command.id));
 		
-		ApplicationCommandsCache.delete(application_command.id);
+		redis.HDEL("commands", application_command.id);
 	}
 	catch(error: unknown)
 	{
-		console.error(error);
+		logger.error(error);
 	}
 }
 
+/**
+ * get all available application commands
+ * @return {APIApplicationCommand[]|null} An array of APIApplicationCommand or null
+ */
 export async function getAllApplicationCommands(): Promise<APIApplicationCommand[]|null>
 {
 	try
 	{
-		if (ApplicationCommandsCache.size >= 1)
+		/**
+		 * check for cache first and return from cache if possible
+ 		*/
+		const cached_commands: APIApplicationCommand[] = [];
+		
+		for await (const { field, value } of redis.hScanIterator("commands"))
 		{
-			return Array.from(ApplicationCommandsCache.values()) as APIApplicationCommand[];
+			cached_commands.push(JSON.parse(value) as APIApplicationCommand);
+		}
+		
+		if (cached_commands.length >= 1)
+		{
+			return cached_commands;
 		}
 		else
 		{
+			/**
+			 * fetch the commands if there's no cache available
+ 			*/
 			const FetchedCommands: APIApplicationCommand[] = await res.get(Routes.applicationCommands(DiscordAppId)) as APIApplicationCommand[];
-			FetchedCommands.forEach((application_command: APIApplicationCommand) => ApplicationCommandsCache.set(application_command?.id, application_command));
+			FetchedCommands.forEach((application_command: APIApplicationCommand) => redis.HSET("commands", application_command?.id, JSON.stringify(application_command)));
 			
 			return FetchedCommands;
 		}
 	}
-	catch
+	catch (e: unknown)
 	{
+		logger.error(e);
 		return null;
 	}
 }
 
+/**
+ * update specific application command
+ * @param {APIApplicationCommand} application_command - command to update
+ * @return {void}
+ */
 export async function updateApplicationCommand(application_command: APIApplicationCommand, new_application_command: command_metadata): Promise<void>
 {
 	try
@@ -64,10 +101,10 @@ export async function updateApplicationCommand(application_command: APIApplicati
 			body: new_application_command
 		}) as APIApplicationCommand;
 		
-		ApplicationCommandsCache.set(updated_application_command.id, updated_application_command);
+		redis.HSET("commands", updated_application_command.id, JSON.stringify(updated_application_command));
 	}
 	catch(error: unknown)
 	{
-		console.error(error);
+		logger.error(error);
 	}
 }

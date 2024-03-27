@@ -9,7 +9,7 @@
 #include "HttpStatusCodes_C++11.h"
 
 void alert_join_leave(const std::string& message);
-void send_hi_message(const std::string& guildId);
-std::string getGuildsCount();
+void send_hi_message(dpp::guild* guild);
+uint64_t get_guild_count();
 
 #endif // BRAINBOT_XTRA_ALERT_H

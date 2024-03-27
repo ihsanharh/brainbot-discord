@@ -1,8 +1,8 @@
 #include "collector.h"
 
-void _collectorAck(const dpp::message_create_t& event)
+void _collectorAck(const std::string& raw_event)
 {
-	const nlohmann::json json_event = nlohmann::json::parse(event.raw_event);
+	const nlohmann::json json_event = nlohmann::json::parse(raw_event);
 	
 	Brain::BOT->request(Brain::Env("SERVER_URL")+"/_collector/_active", dpp::http_method::m_get, [json_event](const dpp::http_request_completion_t& res) {
 		if (res.status == HttpStatus::toInt(HttpStatus::Code::OK))
@@ -18,7 +18,7 @@ void _collectorAck(const dpp::message_create_t& event)
 				{
 					std::string mixed_state = j["custom_id"].get<std::string>();
 					size_t last_i = mixed_state.find_last_of(".");
-					std::string get_state = mixed_state.substr(last_i+1);
+					std::string get_state = "clr0" + mixed_state.substr(last_i+1);
 					
 					if (std::find(active_collector.begin(), active_collector.end(), get_state) != active_collector.end())
 					{

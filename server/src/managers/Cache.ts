@@ -1,59 +1,77 @@
-/* internal cache */
-
 import { fetch } from 'undici';
 
 import { ServerUrl, Rsa } from "../utils/config";
+import { OwnResponsePayload } from "../typings";
 
-export const Cache: Map<string, any> = new Map<string, any>();
-
-export async function _set(k: string, v: any): Promise<void>
-{
-	Cache.set(k, v);
-}
-
-export async function _delete(k: string): Promise<void>
-{
-	Cache.delete(k);
-}
-
-/* all methods below are for external thread.
- * for main thread use above method instead, or just import the Cache variable directly.
+/**
+ * @description - Helpers for external thread for accessing redis.
+ * all methods below are for external thread.
+ * Usable on main thread, but it is preferred to import redis object directly in main thread
  *
- * • example usage for external thread:
- * import * as Cache from "managers/Cache.ts";
+ * @example
+ * import Cache from "managers/Cache.ts";
  *
  * const id: string = "hey";
- * Cache.has(id); //check if cache has id variable
+ * Cache.find(id); //get cache value
  * Cache.set(id); //caches id variable
  * Cache.remove(id); //removes id variable from cache
  */
 
-export async function has(k: string): Promise<boolean>
+/**
+	* find key and return its value
+	* @param {string} k - key to get
+	* @return {Promise<string|null>} return a promise containing string if found, otherwise a null
+	*/
+export async function find(k: string): Promise<string|null>
 {
-	const res = await fetch(`${ServerUrl}/_cache?key=${k}`, {
+	const res = await fetch(`${ServerUrl}/v1/cache/${k}`, {
 		method: "GET"
 	});
 	
-	if (res.ok) return true;
-	else return false;
+	return (res.ok? (await res.json() as OwnResponsePayload)?.d as string: null);
 }
 
-export async function set(k: string, v: string = "value"): Promise<boolean>
+/**
+	* check wether the key exist or not. it's basically a wrapper of find, use find instead.
+	* @param {string} k - key to check
+	* @return {boolean} indicating key exist or not
+	*/
+export async function has(k: string): Promise<boolean>
 {
-	const res = await fetch(`${ServerUrl}/_cache?key=${k}&value=${encodeURIComponent(v)}`, {
-		method: "POST"
+	const exist = await find(k);
+	
+	return exist? true : false;
+}
+
+/**
+	* set key-value pair cache.
+	* @param {string} k - key of the cache. must be unique, if there's already one cached, it will be replaced by this one. be careful
+	* @param {string} [value=0] - value of the key, if not provided will set to "0"
+	* @param {number} [ttl] - time to live for the key-value.
+	* @return {boolean} return true on cached, otherwise false
+	*/
+export async function set(k: string, v: string = "0", ttl?: number): Promise<boolean>
+{
+	const res = await fetch(`${ServerUrl}/v1/cache/${k}/${encodeURIComponent(v)}`, {
+		method: "POST",
+		body: JSON.stringify({
+			ttl
+		})
 	});
 	
-	if (res.ok) return true;
-	else return false;
+	return (res.ok? true: false);
 }
 
+/**
+	* delete key. it does not check for the key
+	* @param {string} k - key to deleted
+	* @return {boolean} will always return true
+	*/
 export async function remove(k: string): Promise<boolean>
 {
-	const res = await fetch(`${ServerUrl}/_cache?key=${k}`, {
+	fetch(`${ServerUrl}/v1/cache/${k}`, {
 		method: "DELETE"
 	});
 	
-	if (res.ok) return true;
-	else return false;
+	return true;
 }

@@ -2,13 +2,15 @@ import { Request, Response, Router, json } from 'express';
 
 import { HttpStatusCode } from "../../typings";
 import { verifyPrivateRouting } from "../../utils/middleware";
-import { ActiveCollector, createCollector, collected, setMessage } from "../../managers/Collector";
+import { _active_collector, createCollector, collected, setMessage } from "../../managers/Collector";
 
 const CollectorRoute: Router = Router();
 
 CollectorRoute.use(json());
 
 CollectorRoute.get("/_active", verifyPrivateRouting, async (req: Request, res: Response) => {
+	const ActiveCollector = await _active_collector();
+
 	if (ActiveCollector.size >= 1) return res.status(HttpStatusCode.OK).json({
 		"active": [...Array.from(ActiveCollector.keys())]
 	});

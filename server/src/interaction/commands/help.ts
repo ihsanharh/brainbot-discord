@@ -1,27 +1,10 @@
 import { fetch } from 'undici';
 
-import {
-	APIActionRowComponent,
-	APIApplicationCommand,
-	APIButtonComponentWithCustomId,
-	APIEmbed,
-	APIEmbedField,
-	APIMessageActionRowComponent,
-	APIInteraction,
-	APIInteractionGuildMember,
-	APIUser,
-	ApplicationCommandOptionType,
-	CollectorData,
-	InteractionResponseType,
-	InteractionType,
-	PermissionFlagsBits,
-	Routes
-} from "../../typings";
+import { APIActionRowComponent, APIApplicationCommand, APIButtonComponentWithCustomId, APIEmbed, APIEmbedField, APIMessageActionRowComponent, APITextInputComponent, APIInteraction, APIInteractionGuildMember, APIUser, ApplicationCommandOptionType, CollectorData, ComponentType, InteractionResponseType, PermissionFlagsBits, Routes, TextInputStyle } from "../../typings";
 import Command, { respond } from "./base";
 import { colourInt, getDiscordUser, makeAvatarUrl, makeId } from "../../utils/functions";
 import { Rsa, ServerUrl } from "../../utils/config";
 import { res } from "../../utils/res";
-import { getAllApplicationCommands } from "../../managers/ApplicationCommand";
 const Colours = require("../../utils/colours.json");
 
 const HelpCommand = {
@@ -42,6 +25,11 @@ const HelpCommand = {
 					name: "Commands list",
 					name_localizations: {},
 					value: "commands"
+				},
+				{
+					name: "Suggest a Feature",
+					name_localizations: {},
+					value: "suggest"
 				}
 			]
 		}
@@ -53,19 +41,15 @@ const HelpCommand = {
 const state = makeId(30);
 
 export const customId: {
-	CommandsListEmbed: string;
-	HelpMenuButton: string;
-	HelpMenuEmbed: string;
-	HelpMenuSelect: string;
-	unknown: string;
-	short: (id: string) => string;
+	[k: string]: any;
 } = {
 	CommandsListEmbed: `CommandList.Embed`,
 	HelpMenuButton: `HelpMenuHome.Button.${state}`,
 	HelpMenuEmbed: `HelpMenu.Embed`,
 	HelpMenuSelect: `HelpMenu.Select.${state}`,
+	SuggestAFeatureModal: `SuggestAFeature.Modal`,
 	unknown: `unknown`,
-	short: (id: string) => id.substr(0, id.lastIndexOf("."))
+	short: (id: string) => id.substring(0, id.lastIndexOf("."))
 }
 
 function Button(T: string): APIButtonComponentWithCustomId
@@ -91,8 +75,14 @@ function SelectMenu(T: string, disabled?: boolean): APIMessageActionRowComponent
 		disabled: disabled ?? false,
 		options: [
 			{
-				label: "Commands List",
-				value: HelpCommand?.options[0].choices[0].value
+				label: "View All Commands",
+				value: HelpCommand?.options[0].choices[0].value,
+				description: "Unlock my full potential with this comprehensive list."
+			},
+			{
+				label: "Suggest a Feature",
+				value: HelpCommand?.options[0].choices[1].value,
+				description: "Have a brilliant idea? I'm always looking to improve!"
 			}
 		],
 		min_values: 1,
@@ -111,8 +101,8 @@ async function Embed(T: string, user?: {me?: APIUser, member?: APIInteractionGui
 		if (!user?.me) throw new Error(`'user.me' parameter is required for '${T}'!`);
 		
 		return {
-			title: `Welcome to Brain Bot's Help menu!`,
-			description: "it learns and imitates, is social content. can seem rude or inappropriate - talk with caution and at your own risk.\n\nthe bot pretends to be human - don't give personal info even if it 'asks'.\n\nBrain Bot does not understand you, and cannot mean anything it 'says'.",
+			title: `Hey there! I'm ${user.me.username}, your resident Discord hype-bot! <:brainbot:992352663779946536>`,
+			description: "I'm your friendly Discord bot, designed to enhance your chats with fun features, useful tools, and plenty of personality.\n\nNeed some fun in your chats? Maybe a little friendly competition?  Or just someone to automate those pesky tasks? I'm your bot!",
 			color: colourInt(Colours["blurple.MainColour"]),
 			thumbnail: {
 				url: makeAvatarUrl(user?.me)
@@ -124,8 +114,10 @@ async function Embed(T: string, user?: {me?: APIUser, member?: APIInteractionGui
 		if (!user?.member) throw new Error(`'user.member' parameter is required for '${T}'!`);
 		
 		var CommandsFields: APIEmbedField[] = [];
-		var RegisteredCommands: APIApplicationCommand[] = await getAllApplicationCommands() as APIApplicationCommand[];
-		if (RegisteredCommands.length < 1) CommandsFields.push({
+		var FetchCommands = await fetch(ServerUrl + "/_commands");
+		var RegisteredCommands: APIApplicationCommand[] = FetchCommands.ok? await FetchCommands.json() as APIApplicationCommand[]: [];
+		
+		if (!FetchCommands.ok || RegisteredCommands && RegisteredCommands.length < 1) CommandsFields.push({
 			name: "No commands available atm."
 		} as APIEmbedField);
 		else
@@ -156,34 +148,102 @@ async function Embed(T: string, user?: {me?: APIUser, member?: APIInteractionGui
 	else return {};
 }
 
-export async function handleHelpSelect(id: string, interaction: {[k: string]: any}): Promise<void>
+async function Modal(T: string): Promise<{custom_id: string; title: string; components: APIActionRowComponent<APITextInputComponent>[]}>
 {
-	var Embeds: APIEmbed = await Embed(customId.unknown), Component = SelectMenu(customId.unknown);
-	var bot: APIUser = await getDiscordUser() as APIUser;
-	
-	if (interaction?.data['values']?.[0] === HelpCommand?.options[0].choices[0].value)
+	if (T === customId.SuggestAFeatureModal)
 	{
-		Embeds = await Embed(customId.CommandsListEmbed, { me: bot ,member: interaction.member });
-		Component = Button(customId.short(customId.HelpMenuButton)+"."+id);
-	}
-	else if (interaction?.data['custom_id'].startsWith(customId.short(customId.HelpMenuButton)))
-	{
-		Embeds = await Embed(customId.HelpMenuEmbed, { me: bot });
-		Component = SelectMenu(customId.short(customId.HelpMenuSelect)+"."+id);
-	}
-	
-	respond(interaction, {
-		type: InteractionResponseType.UpdateMessage,
-		data: {
-			embeds: [Embeds],
+		return {
+			custom_id: T,
+			title: "Suggest A Feature",
 			components: [
 				{
-					type: 1,
-					components: [Component]
+					type: ComponentType.ActionRow,
+					components: [
+						{
+							type: ComponentType.TextInput,
+							custom_id: "Feature",
+							label: "Feature Idea",
+							style: TextInputStyle.Short,
+							required: true,
+							placeholder: "Briefly describe your awesome suggestion..."
+						},
+					]
+				},
+				{
+					type: ComponentType.ActionRow,
+					components: [
+						{
+							type: ComponentType.TextInput,
+							custom_id: "FeatureDetails",
+							label: "Details (Optional)",
+							style: TextInputStyle.Paragraph,
+							required: false,
+							placeholder: "Explain why this would be useful, how it might work, etc."
+						}
+					]
 				}
-			]
+		    ]
 		}
-	});
+	}
+	else return {
+		custom_id: customId.unknown,
+		title: "unknown",
+		components: []
+	}
+}
+
+export async function handleHelpSelect(id: string, interaction: {[k: string]: any}): Promise<void>
+{
+	var bot: APIUser = await getDiscordUser() as APIUser;
+
+	// select menu handling
+	if (interaction?.data['values']?.[0] === HelpCommand?.options[0].choices[0].value)
+	{
+		// return when a command list selected
+		respond(interaction, {
+			type: InteractionResponseType.UpdateMessage,
+			data: {
+				embeds: [await Embed(customId.CommandsListEmbed, { me: bot ,member: interaction.member })],
+				components: [{
+					type: ComponentType.ActionRow,
+					components: [Button(customId.short(customId.HelpMenuButton)+"."+id)]
+				}]
+			}
+		});
+	}
+	else if (interaction?.data['values']?.[0] === HelpCommand?.options[0].choices[1].value)
+	{
+		// return when suggest a feature selected
+		respond(interaction, {
+			type: InteractionResponseType.Modal,
+			data: await Modal(customId.SuggestAFeatureModal)
+		});
+	}
+	// button handling
+	else if (interaction?.data['custom_id'].startsWith(customId.short(customId.HelpMenuButton)))
+	{
+		// when the user pressed back in the command list menu
+		respond(interaction, {
+			type: InteractionResponseType.UpdateMessage,
+			data: {
+				embeds: [await Embed(customId.HelpMenuEmbed, { me: bot })],
+				components: [{
+					type: ComponentType.ActionRow,
+					components: [SelectMenu(customId.short(customId.HelpMenuSelect)+"."+id)]
+				}]
+			}
+		});
+	}
+	else
+	{
+		// unknown???
+		respond(interaction, {
+			type: InteractionResponseType.UpdateMessage,
+			data: {
+				content: "unknown...."
+			}
+		});
+	}
 }
 
 export async function _collectorCollect(data: CollectorData, interaction: APIInteraction): Promise<void>
@@ -193,11 +253,35 @@ export async function _collectorCollect(data: CollectorData, interaction: APIInt
 
 export async function _collectorEnd(data: CollectorData): Promise<void>
 {
-	if (data.message) await res.patch(Routes.channelMessage(data?.message?.['channel_id'] as string, data?.message?.id as string), {
-		body: {
-			components: []
-		}
-	});
+	if (data.message) {
+		const message = data.message;
+
+		if (message.components && message.components.length >= 1)
+		{
+			for (const ActionRow of message.components)
+			{
+				if (ActionRow.components && ActionRow.components.length >= 1)
+				{
+					for (const Component of ActionRow.components)
+					{
+						const ARIndex = message.components.indexOf(ActionRow);
+					    const ItsIndex = ActionRow.components.indexOf(Component);
+
+						Object.defineProperty(message.components[ARIndex].components[ItsIndex], `disabled`, {
+							value: true,
+							enumerable: true
+						});
+					}
+				}
+			}
+	    }
+
+	 	await res.patch(Routes.channelMessage(data?.message?.['channel_id'] as string, data?.message?.id as string), {
+			body: {
+				components: message.components
+		    }
+	    });
+	}
 }
 
 class Help extends Command
@@ -210,21 +294,33 @@ class Help extends Command
 	async execute(): Promise<void>
 	{
 		const selected_category = this.get_options(HelpCommand?.options[0].name);
-		var payload: {embeds:APIEmbed[], components?:APIActionRowComponent<APIMessageActionRowComponent>[]} = {
+		let resType = InteractionResponseType.ChannelMessageWithSource;
+		let activateCollector = true;
+		var payload: any = {
 			embeds: [await Embed(customId.HelpMenuEmbed, { me: this.me })],
 			components: [
 				{
-					type: 1,
+					type: ComponentType.ActionRow,
 					components: [SelectMenu(customId.HelpMenuSelect)]
 				}
 			]
 		}
 		
-		if (selected_category && selected_category === HelpCommand?.options[0].choices[0].value) payload = {
-			embeds: [await Embed(customId.CommandsListEmbed, { me: this.me ,member: this.command?.member })]
+		if (selected_category)
+		{
+			activateCollector = false;
+
+			if (selected_category === HelpCommand?.options[0].choices[0].value) payload = {
+		        embeds: [await Embed(customId.CommandsListEmbed, { me: this.me ,member: this.command?.member })]
+			}
+			else if (selected_category === HelpCommand?.options[0].choices[1].value)
+			{
+				resType = InteractionResponseType.Modal;
+				payload = await Modal(customId.SuggestAFeatureModal);
+			}
 		}
 		
-		fetch(`${ServerUrl}/_collector/new`, {
+		if (activateCollector) fetch(`${ServerUrl}/_collector/new`, {
 			method: "POST",
 			headers: {
 				"Authorization": Rsa,
@@ -241,7 +337,7 @@ class Help extends Command
 		});
 		
 		return this.reply({
-			type: InteractionResponseType.ChannelMessageWithSource,
+			type: resType,
 			data: payload
 		});
 	}

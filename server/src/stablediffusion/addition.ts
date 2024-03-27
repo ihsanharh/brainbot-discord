@@ -1,39 +1,135 @@
 import { fetch } from 'undici';
 import * as Sharp from 'sharp';
 
-import { DiscordAppId, DiscordChannelStorage, Rsa, ServerUrl } from "../utils/config";
+import { Dev, DiscordAppId, DiscordChannelStorage, Rsa, SdUrl, ServerUrl } from "../utils/config";
 import { res } from "../utils/res";
 import { HttpStatusCode } from "../utils/types/http";
-import { APIChannel, APIMessage, APIUser, Routes } from "../typings";
+import { APIChannel, APIMessage, APIUser, CheckPredictionType, MessageFlags, PredictionObject, Routes } from "../typings";
 
-export async function delete_original_response(token: string): Promise<any>
+export async function edit_original_response(token: string, payload: any, message_id?: string): Promise<unknown>
+{
+	try
+	{
+		return await res.patch(Routes.webhookMessage(DiscordAppId, token, message_id??"@original"), payload);
+	} catch (e: unknown) {
+		return e;
+	}
+}
+
+export async function delete_original_response(token: string): Promise<unknown>
 {
 	try
 	{
 		return await res.delete(Routes.webhookMessage(DiscordAppId, token)).then((r) => {}).catch((err) => {});
 	}
-	catch(e: unknown) {}
+	catch(e: unknown) {
+		return e;
+	}
 }
 
-export async function followup_message(token: string, payload: {body:{[k:string]:any;};files?:any;}): Promise<any>
+export async function delete_followup_message(token: string, message_id: string): Promise<unknown>
 {
 	try
 	{
-		var { body, files } = payload;
-		
-		if (!files) files = [];
-		
-		return await res.post(Routes.webhook(DiscordAppId, token), {
-			body,
-			files,
-			auth: false,
-		});
+		return await res.delete(Routes.webhookMessage(DiscordAppId, token, message_id));
 	}
-	catch (e: unknown) {}
+	catch(e: unknown)
+	{
+		return e;
+	}
+}
+
+export async function check_prediction(token: string, currPred: CheckPredictionType, message_id?: string): Promise<CheckPredictionType>
+{
+	await new Promise((resolve: (value: unknown) => void) => setTimeout(resolve, 1200));
+	const get_pred = await fetch(SdUrl, {
+		method: "GET",
+		headers: {
+			"Acccept": "application/json",
+			"Prediction-Id": `${currPred.prediction.id}`,
+			"Include-B64": "true"
+		}
+	});
+
+	let prediction = await get_pred.json() as PredictionObject;
+	let helpful_m, tensec_m;
+	
+	if (prediction.status === "processing" && prediction?.logs)
+	{
+		const predict_percentage_split = prediction?.logs.split("\n");
+		const predict_percentage = predict_percentage_split[predict_percentage_split.length - 1];
+
+		edit_original_response(token, {
+			body: {
+				content: predict_percentage
+			}
+		}, message_id);
+		if (currPred.tensec_m) delete_followup_message(token, currPred.tensec_m?.id);
+		if (currPred.helpful_m) delete_followup_message(token, currPred.helpful_m?.id);
+	}
+	else if (prediction.status === "starting")
+	{
+		/**
+		 * checkk for starting status
+		 */
+		const created_time = Date.parse(prediction.created_at);
+		const now_time = Date.now() - created_time;
+		
+		if (now_time >= 10000 && !currPred.tensec_m)
+		{
+			/**
+			 * if the status hasnt been updated in 10 secs, send a follow up message.
+			 */
+			tensec_m = await followup_message(token, {
+				body: {
+					content: "The server is undergoing a restart after a period of inactivity. This process may require a few minutes, and your patience is appreciated.",
+					flags: MessageFlags.Ephemeral
+				}
+			}) as APIMessage;
+		}
+		else if (now_time >= 30000 && !currPred.helpful_m)
+		{
+			/**
+			 * here we do checking if the starting status is longer than 30 secs
+			 * incase the server is down, just to let the user know.
+			 */
+			const preset_messages = [
+				"This is taking a bit longer than expected, but I'm making progress!",
+				"I'm just double-checking some things, will do the task for you shortly.",
+				"This might require a little extra research, I'll get back to you as soon as I know more."
+			];
+
+			helpful_m = await followup_message(token, {
+				body: {
+					content: preset_messages[Math.floor(Math.random() * preset_messages.length)],
+					flags: MessageFlags.Ephemeral
+				}
+			}) as APIMessage;
+		}
+	}
+
+	return {
+		prediction,
+		helpful_m,
+		tensec_m
+	};
+}
+
+export async function followup_message(token: string, payload: any): Promise<unknown>
+{
+	try
+	{
+		return await res.post(`${Routes.webhook(DiscordAppId, token)}?wait=true`, payload);
+	}
+	catch (e: unknown) {
+		return e;
+	}
 }
 
 export async function limits(author: APIUser): Promise<number[]>
 {
+	if (author.id === Dev) return [0, new Date().getTime()];
+
 	const req = await fetch(ServerUrl+"/v1/database/imagine/"+author.id, {
 		method: "GET",
 		headers: {

@@ -1,0 +1,25 @@
+version: "3.7"
+
+services:
+  redis:
+    image: redis:7.2.3-alpine
+    working_dir: /redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - type: bind
+        source: ./redis.conf
+        target: /redis/redis.conf
+    network:
+      - redis
+  
+  server:
+    build:
+      context: ./server
+    working_dir: /app
+    env_file: .env
+    depends_on:
+      - redis
+
+network:
+  redis:
