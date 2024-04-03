@@ -1,6 +1,7 @@
 name: Bot environment CI
 
 on:
+    workflow_dispatch:
     push:
         paths:
             - 'bot/Dockerfile.env'
