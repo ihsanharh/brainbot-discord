@@ -120,6 +120,18 @@ async function main(): Promise<void>
 			});
 		}
 	}
+	else if (interaction.type === InteractionType.ModalSubmit)
+	{
+		console.log(interaction.data)
+
+		return respond(interaction, {
+			type: InteractionResponseType.ChannelMessageWithSource,
+			data: {
+				content: "Thanks for the feature suggestion! We'll review it closely for possible implementation in future updates :)",
+				flags: MessageFlags.Ephemeral
+			}
+		});
+	}
 }
 
 function command_logger(content: string)

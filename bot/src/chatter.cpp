@@ -9,7 +9,6 @@ void return_proxy(const std::string &proxy_id)
 	
 	if (!proxy) return;
 	
-	Brain::REDIS->hdel("proxy_u", proxy_id);
 	Brain::REDIS->hset("proxy", proxy_id, *proxy);
 }
 
@@ -25,15 +24,14 @@ int abort_session(const nlohmann::json &session_obj, uint16_t status)
 	if (status == static_cast<uint16_t>(HttpStatus::Code::Forbidden))
 	{
 		Brain::REDIS->hset("proxy_b", proxy_id, "0");
-		
-		return 0;
 	}
-	
-	return_proxy(proxy_id);
-	
-	if (!check_session) return 0;
-	
+	else
+	{
+		return_proxy(proxy_id);
+	}
+
 	Brain::REDIS->del("session:" + user_id);
+	Brain::REDIS->hdel("proxy_u", proxy_id);
 	
 	return 1;
 }
@@ -254,18 +252,22 @@ void respond(const dpp::message &message, const std::chrono::time_point<std::chr
 				SPDLOG_TRACE("[@{}] No proxy available, aborting..", author_id);
 				return;
 			}
-			
+
 			std::string line = obtained_proxy.value().second;
 			std::string::size_type pos_t = line.find("$");
 			std::string url = line.substr(0, pos_t);
 			std::string agent = line.substr(pos_t + 1);
 			
+			SPDLOG_TRACE("[@{}] Using proxy {}", author_id, url);
+
 			session_obj = {
 				{"user_id", author_id},
 				{"useragent", agent},
 				{"proxy_id", obtained_proxy.value().first},
 				{"proxy", url},
 				{"content", content},
+				{"where", message.is_dm()? "DM": "GUILD"},
+				{"guild_id", message.is_dm()? "0": std::to_string(message.guild_id)},
 				{"last_message_timestamp", std::to_string(message_creation_time_ms)},
 				{"context", nlohmann::json::array()}
 			};
@@ -318,7 +320,8 @@ void respond(const dpp::message &message, const std::chrono::time_point<std::chr
 				{ "Authorization", "Bot "+Brain::Env("BRAIN_BOTD_TOKEN") }
 			});
 		}, session_obj.dump(), "application/json", {
-			{"Accept", "application/json"}
+			{"Accept", "application/json"},
+			{"User-Agent", session_obj["useragent"]}
 		});
 	}).detach();
 }

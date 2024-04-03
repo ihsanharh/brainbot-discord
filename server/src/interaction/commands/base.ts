@@ -123,20 +123,7 @@ class Command
 
 export async function respond(interaction: {[k:string]:any}, payload: APIInteractionResponse): Promise<void>
 {
-	var SupportedInteractionTypes = [
-		InteractionType.ApplicationCommand,
-		InteractionType.MessageComponent,
-		InteractionType.Ping
-	];
-	
-	if (SupportedInteractionTypes.includes(interaction.type))
-	{
-		parentPort?.postMessage(payload);
-	}
-	else
-	{
-		console.log("can't respond to this.");
-	}
+	parentPort?.postMessage(payload);
 }
 
 export default Command;

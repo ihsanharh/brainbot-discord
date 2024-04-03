@@ -1,17 +1,20 @@
 import { Request, Response, Router, json } from 'express';
+import { Collection, Model } from 'mongoose';
 
 import { asOwnResponse } from "../../services/own";
-import { makeId } from "../../utils/functions";
 import { HttpStatusCode } from "../../utils/types/http";
 import { OwnResponsePayloadType } from "../../typings";
 import BlacklistSchema from "../../schemas/blacklist";
 import ChatSchema from "../../schemas/chat";
 import ImagineSchema from "../../schemas/imagine";
+import SessionSchema from "../../schemas/session";
+import Logger from "../../services/logger";
 
 const Collections: {[key: string]: any;} = {
 	blacklist: BlacklistSchema,
 	chat: ChatSchema,
-	imagine: ImagineSchema
+	imagine: ImagineSchema,
+	session: SessionSchema
 }
 
 /* Route for /v1/database/{collection}/{id}?
@@ -33,8 +36,8 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 	var { collection, id } = req.params;
 	var { many } = req.query;
 	var statusCode = HttpStatusCode.OK, result, d, m, p: string[] = [];
-	
-	if (!Collections[collection])
+
+	if (!(collection in Collections))
 	{
 		statusCode = HttpStatusCode.NOT_FOUND;
 		m = "Common.DoesNotExist";
@@ -49,6 +52,7 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 	else
 	{
 		var Collection = Collections[collection];
+		if (req.body satisfies Collection)
 		
 		switch (req.method) {
 			case "GET":
@@ -72,11 +76,14 @@ DatabaseRoute.all("/:collection/:id?", async (req: Request, res: Response) => {
 				let record = req.body;
 				
 				if (record?.id || record?._id) isExisting = await Collection.findOne(record?.id? {id: record?.id}: {_id: record?._id});
-				else Object.defineProperty(record, "_id", {
-					enumerable: true,
-					value: makeId(32)
-				});
-				if (!isExisting) result = await new Collection(record).save();
+				
+				try {
+					if (!isExisting) result = await new Collection(record).save();
+				}
+				catch (err: unknown) {
+					Logger.error(err);
+				}
+
 				if (result)
 				{
 					statusCode = HttpStatusCode.CREATED;
