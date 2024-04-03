@@ -21,7 +21,7 @@ jobs:
               run: docker image save -o brainbot-env.tar.gz brainbot-env:latest
 
             - name: Upload artifact
-              uses: action/upload-artifact@v4
+              uses: actions/upload-artifact@v4
               with:
                 name: brainbot-env
                 path: brainbot-env.tar.gz
