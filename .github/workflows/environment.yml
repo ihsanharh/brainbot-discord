@@ -1,0 +1,26 @@
+name: Bot environment CI
+
+on:
+    push:
+        paths:
+            - 'bot/Dockerfile.env'
+
+jobs:
+    build-image:
+        name: Build Image
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Build Image
+              run: docker build ./bot -f Dockerfile.env -t brainbot-env:latest
+
+            - name: Save Image
+              run: docker image save -o brainbot-env.tar.gz brainbot-env:latest
+
+            - name: Upload artifact
+              uses: action/upload-artifact@v4
+              with:
+                name: brainbot-env
+                path: brainbot-env.tar.gz
