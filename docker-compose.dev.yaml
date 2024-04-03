@@ -12,7 +12,8 @@ services:
     entrypoint: sh -c "npm install && npm run dev"
     depends_on:
       - redis
-    env_file: ./.env.dev
+    env_file: 
+      - ./.env.dev
     image: node:20.11-alpine
     networks:
       - brainbot_dev
@@ -24,9 +25,25 @@ services:
         target: /app/server/
     working_dir: /app/server
 
+  chat:
+    entrypoint: sh -c "pip install redis requests && python3 -u ./src/main.py"
+    depends_on:
+      - redis
+    env_file:
+      - ./.env.dev
+    image: python:alpine
+    networks:
+      - brainbot_dev
+    volumes:
+      - type: bind
+        source: ./chat/
+        target: /chat/
+    working_dir: /chat
+
   bot:
     entrypoint: sh -c "cd bot && cmake -B ./build && cmake --build ./build && ./build/brainbot"
     depends_on:
+      - chat
       - server
     image: brainbot-env:0.0.5
     networks:
