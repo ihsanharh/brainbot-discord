@@ -1,49 +1,48 @@
-import { fetch, Response } from 'undici';
+import { fetch } from 'undici';
 
-import { APIInteraction, InteractionResponseType, PermissionFlagsBits, Routes } from "../../typings";
-import { DiscordAppId, ServerUrl } from "../../utils/config";
-import { res } from "../../utils/res";
+import { APIChatInputApplicationCommandInteraction, InteractionResponseType } from 'discord-api-types/v10';
+
+import { ServerUrl } from "../../utils/config";
 import Command from "./base";
 
-const InfoCommand = {
-	name: "info",
-	name_localizations: {},
-	description: "Get information and statistics about this bot.",
-	description_localizations: {},
-	options: [],
-	default_member_permissions: String(PermissionFlagsBits.UseApplicationCommands),
-	dm_permission: false
-}
+import { InfoCommand } from "../../constants/commands.json";
+import * as values from "../../constants/values.json";
 
 class Info extends Command
 {
-	constructor()
+	constructor(interaction: APIChatInputApplicationCommandInteraction)
 	{
-		super(InfoCommand);
+		super(interaction, InfoCommand);
 	}
 	
 	async execute(): Promise<void>
 	{
-		stats(this.command as APIInteraction);
+		var guilds = await fetch(`${ServerUrl}/__rntm/guild-count`);
+		var conversations = await fetch(`${ServerUrl}/__rntm/session-count`);
+		var guilds_count = 0;
+		var conversation_count = 0;
+		let no_one;
+
+		if (guilds.ok)
+		{
+			const guildcount_json = await guilds.json() as { count: string; };
+			guilds_count = Number(guildcount_json?.count ?? 0);
+		}
+
+		if (conversations.ok)
+		{
+			const convcount_json = await conversations.json() as { count: string; };
+			conversation_count = Number(convcount_json?.count ?? 0);
+			no_one = (Number(conversation_count) >= 1)? this.pretty(values.commands.info.chatting_with, String(conversation_count)): values.commands.info.no_one;
+		}
+
 		return this.reply({
-			type: InteractionResponseType.DeferredChannelMessageWithSource,
-			data: {}
+			type: InteractionResponseType.ChannelMessageWithSource,
+			data: {
+				content: this.pretty(values.commands.info.default_res + no_one, String(guilds_count))
+			}
 		});
 	}
-}
-
-async function stats(interaction: APIInteraction): Promise<void>
-{
-	var guilds = await fetch(`${ServerUrl}/_guild/count`);
-	var guilds_count = (await guilds.json() as {count: string})?.count?? "NaN";
-	var conversation_count = "no one is currently talking to me."
-	var message: string = `<:brainbot:992352663779946536> **Brain Bot** is an AI-Powered Discord Chat bot. I am in ${guilds_count} servers and ${conversation_count}`
-	
-	res.patch(Routes.webhookMessage(DiscordAppId, interaction?.token), {
-		body: {
-			content: message
-		}
-	});
 }
 
 export default Info;

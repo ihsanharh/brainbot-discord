@@ -1,21 +1,25 @@
+import { RawFile } from '@discordjs/rest';
 import { fetch, Response } from 'undici';
+import { nanoid } from 'nanoid';
 
-import * as Cache from "../managers/Cache";
-import { Integer } from "../constants/values";
-import { edit_original_response, delete_original_response, storeInStorage, check_prediction, makeOneImage, followup_message, update_metadata } from "./addition";
-import { SdUrl } from "../utils/config";
+import { APIButtonComponentWithCustomId, APIMessage, APIUser, ComponentType, MessageFlags } from 'discord-api-types/v10';
+import { CheckPredictionType, PredictionLimit, PredictionObject, PredictionRequestJson } from "../typings";
+
+import { parse_command } from "../interaction/commands/base";
+import { edit_original_response, delete_original_response, followup_message, delete_followup_message } from "../interaction/interaction";
+import { Rsa, SdUrl } from "../utils/config";
 import { b64toab } from "../utils/functions";
-import { APIButtonComponentWithCustomId, APIMessage, APIUser, CheckPredictionType, MessageFlags, PredictionObject } from "../typings";
+import { storeInStorage, check_prediction, makeOneImage, update_metadata, load_model } from "./addition";
+import * as Cache from "../managers/Cache";
 import logger from "../services/logger";
 
-export const ModelPath = "ai-forever/kandinsky-2.2";
-export const ModelVersion: string = "ea1addaab376f4dc227f5368bbd8eff901820fd1cc14ed8cad63b29249e9d463";
+import * as values from "../constants/values.json";
 
 /**
  * generate an image
  */
-export async function generate(prompt: string, author: APIUser, token: string, limits: number): Promise<void>
-{ 
+export async function generate(model: PredictionRequestJson, author: APIUser, token: string, limits: PredictionLimit, no_prompt?: APIMessage, safe_work?: string): Promise<void>
+{
 	// send POST to the gpu server
 	fetch(SdUrl, {
 		method: "POST",
@@ -24,24 +28,20 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 			"Content-Type": "application/json"
 		},
 		body: JSON.stringify({
-			model: ModelPath,
-			version: ModelVersion,
-			input: {
-				height: 512,
-				width: 512,
-				num_inference_steps: 75,
-                num_inference_steps_prior: 25,
-				prompt,
-				num_outputs: 4
-			}
+			model: model.tag_name,
+			version: model.version,
+			input: model.default
 		})
 	}).then(async (res: Response) => {
 		if (!res.ok)
 		{
-			logger.warn(res, "Error with the gpu server");
+			logger.warn("Error with the server");
+			logger.warn(res.text());
+			console.log(res)
+			Cache.remove(`imagine_${author?.id}`);
 			edit_original_response(token, {
 				body: {
-					content: "Something went wrong, The imagination was cancelled."
+					content: values.commands.imagine.server_not_ok
 				}
 			});
 			
@@ -50,17 +50,16 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 
 		let prediction = await res.json() as PredictionObject;
 		const predictionStatus = ['canceled', 'succeeded', 'failed'];
-		var generated: {data:Buffer;name:string;contentType:string;}[] = [];
-		var upscaleButtons: APIButtonComponentWithCustomId[] = [];
-		let currPred: CheckPredictionType = {
-			prediction
-		};
+		var generated: RawFile[] = [];
+		var showButtons: APIButtonComponentWithCustomId[] = [];
+		let currPred: CheckPredictionType = { prediction };
 		
-		edit_original_response(token, {
+		if (!safe_work) edit_original_response(token, {
 			body: {
-				content: `**${prompt}** - <@${author?.id}> (${prediction.status})`
+				content: parse_command(values.commands.imagine.predict_status, [], model.default?.prompt as string, author?.id, prediction.status)
 			}
 		});
+		if (no_prompt) delete_followup_message(token, no_prompt.id);
 		
 		// wait for the status to become one of predictionStatus
 		while (!predictionStatus.includes(prediction.status))
@@ -70,12 +69,35 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 		}
 		
 		Cache.remove(`imagine_${author?.id}`);
+
+		if (prediction.error || currPred.nsfw_found)
+		{
+			if (typeof prediction.error === "string" && prediction.error.toLowerCase().includes("nsfw") || currPred.nsfw_found)
+			{
+				const select_safe_work = values.commands.imagine.nsfw_detected[Math.floor(Math.random() * values.commands.imagine.nsfw_detected.length)];
+				const re_reselect_model = load_model({ model: model.model, prompt: select_safe_work.new_prompt });
+
+				generate(re_reselect_model, author, token, limits, undefined, select_safe_work.message);
+
+				return;
+			}
+			
+			delete_original_response(token);
+			followup_message(token, {
+				body: {
+					content: prediction.error,
+					flags: MessageFlags.Ephemeral
+				}
+			});
+
+			return;
+		}
 		
 		if (prediction.status === "cancelled")
 		{
 			edit_original_response(token, {
 				body: {
-					content: "The imagination was cancelled."
+					content: values.commands.imagine.cancelled
 				}
 			});
 			
@@ -85,14 +107,23 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 		{
 			edit_original_response(token, {
 				body: {
-					content: "Failed to imagine your imagination."
+					content: values.commands.imagine.failed
 				}
 			})
 			
 			return;
 		}
 		
-		if (!prediction?.output || prediction.output && prediction.output.length < 1) return;
+		if (!prediction?.output || prediction.output && prediction.output.length < 1)
+		{
+			edit_original_response(token, {
+				body: {
+					content: values.commands.imagine.no_output
+				}
+			});
+
+			return;
+		};
 		
 		for (let i = 0; i < prediction?.output?.length; i++)
 		{
@@ -108,11 +139,11 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 		storeInStorage(generated).then(async (data: APIMessage) => {
 			for (let i = 0; i < data.attachments.length; i++)
 			{
-				upscaleButtons.push({
-					type: 2,
+				showButtons.push({
+					type: ComponentType.Button,
 					style: 2,
 					label: `U${i+1}`,
-					custom_id: `imagine_upscale;${data.id}.${i}`
+					custom_id: `show_result;${data.id};${i}`
 				})
 			}
 			
@@ -120,11 +151,11 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 			delete_original_response(token);
 			followup_message(token, {
 				body: {
-					content: `**${prompt}** - <@${author?.id}> (Completed in ${prediction.metrics.predict_time}s.) [${limits+1}/${Integer.ImagineTaskLimit}]`,
+					content: parse_command(values.commands.imagine.predict_status + `[${limits.today+1}/${limits.daily_quota}]`, [], model.default?.prompt as string, author.id, `Completed in ${Math.round(prediction.metrics.predict_time)}s.`),
 					components: [
 						{
-							type: 1,
-							components: upscaleButtons,
+							type: ComponentType.ActionRow,
+							components: showButtons,
 						},
 					]
 				},
@@ -136,13 +167,19 @@ export async function generate(prompt: string, author: APIUser, token: string, l
 					},
 				],
 			});
+			if (safe_work) followup_message(token, {
+				body: {
+					content: safe_work,
+					flags: MessageFlags.Ephemeral
+				}
+			});
 		});
 	}).catch(async (err: unknown) => {
 		Cache.remove(`imagine_${author?.id}`);
 		logger.warn(err, "gpu server failed to imagine");
 		edit_original_response(token, {
 			body: {
-				content: `I can't imagine your prompt because my GPU is heated right now ={. Try again later!`,
+				content: values.commands.imagine.error,
 				flags: MessageFlags.Ephemeral
 			}
 		});

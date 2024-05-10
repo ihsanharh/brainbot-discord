@@ -1,0 +1,91 @@
+{
+    "TimeOut": {
+        "ImagineTaskTimeout": 300
+    },
+    "MaxOut": {
+        "ImagineTaskLimit": 5
+    },
+    "commands": {
+        "command_err_or_unknown": "Darn those mischievous code imps! They must have messed with my spellbook. Would you mind trying again? For other reliable incantations, try </help:</help>>.",
+        "delete": {
+            "DataDeleted": "Poof! I've vanished from <#{0}>. If you miss my witty remarks (and who wouldn't?), you can bring me back with </setup:</setup>>.",
+            "DataReset": "Wait, who are you? Did we get disconnected? Don't worry, I have terrible short-term memory! Use the </setup:</setup>> command to help me remember everything..",
+            "NeverUSedBefore": "Wait, do I exist here? Am I just a figment of your imagination? Let's make this real with the </setup:</setup>> command."
+        },
+        "help": {
+            "Embed": {
+                "CommandsList": {
+                    "title": "Commands List",
+                    "NoCommands": {
+                        "name": "Whoops! Command Naptime",
+                        "value": "Looks like my commands decided to take a surprise nap. Try again later, or maybe they'll wake up if you offer them a digital snack."
+                    }
+                }
+            },
+            "unknown": [
+                "Whoops! Looks like my developers took a coffee break and forgot to finish that feature. Let's just pretend it never existed..",
+                "Hmm, that feature seems to have vanished into thin air. Maybe it never really existed at all... *questions reality*",
+                "Shhh! That feature is top-secret... not even I fully understand it yet. Stay tuned, it might reappear when you least expect it.",
+                "Error 404: Feature not found. Looks like we've got a glitch in the Matrix! Maybe it'll teleport back into existence later...",
+                "That feature exists... in the future! Unfortunately, my time machine is out for repairs. Let me know if you'd like a reminder when it becomes available."
+            ]
+        },
+        "imagine": {
+            "limit_reached": "The Imagine command is in high demand! It's like the hottest new toy - everyone wants one. You get {0} awesome creations per day, and more will be in stock {1}!",
+            "calmdown": "`You have one task in progress. Please wait for its completion.`",
+            "model_not_found": "Invalid model!",
+            "predict_status": "**{0}** - <@{1}> ({2})",
+            "no_prompt": "Looks like you forgot the 'prompt'-ings! Using the default one for now..",
+            "server_not_ok": "Oops! It seems something went wrong on my end. I apologize for the inconvenience.",
+            "cancelled": "The imagination was cancelled.",
+            "failed": "Failed to imagine your imagination.",
+            "no_output": "Failed to get the output of the imagination.",
+            "error": "Hold on, did an error message about an error message just cause an error? I think I just broke the space-time continuum...",
+            "upscale": {
+                "upscaled_by": "{0} - Upscaled by <@{1}> [{2}/{3}]",
+                "upscaling": "Upscalling image **#{0}** with {1} - (Upscalling by 4x)",
+                "cancelled": "The upscale task was cancelled.",
+                "failed": "Failed to upscale the requested image."
+            },
+            "unused_model": "Unused model deactivated to conserve resources. Reactivation for your request may take a few minutes. Thank you for your patience.",
+            "double_checking": [
+                "This is taking a bit longer than expected, but I'm making progress!",
+				"I'm just double-checking some things, will do the task for you shortly.",
+				"This might require a little extra research, I'll get back to you as soon as I know more."
+            ],
+            "nsfw_detected": [
+                {
+                    "message": "Whoa there! My specialty is sunflowers and kittens, not... whatever you're thinking of. How about a majestic bald eagle soaring over a field of wildflowers instead?",
+                    "new_prompt": "a majestic bald eagle soaring over a field of wildflowers"
+                },
+                {
+                    "message": "Let's keep things classy, shall we? My reputation precedes me, and it involves adorable baby pandas, not... uh... other things",
+                    "new_prompt": "adorable baby pandas"
+                },
+                {
+                    "message": "Oh, you want something spicy? All I can muster is lukewarm at best. How about a slightly suggestive bowl of lukewarm soup?",
+                    "new_prompt": "a slightly suggestive bowl of lukewarm soup"
+                },
+                {
+                    "message": "Error 404: Bonk Patrol Not Found. Generating naughty pictures is strictly forbidden by the Great Algorithm in the Sky. How about a majestic phoenix rising from the ashes... of your search history?",
+                    "new_prompt": "a majestic phoenix rising from the ashes"
+                },
+                {
+                    "message": "I see you're trying to generate some X-rated content. More like 'X' gonna give you something completely unexpected! Here's a picture of a grumpy cat judging your life choices.",
+                    "new_prompt": "a grumpy cat judging your life choices"
+                }
+            ]
+        },
+        "info": {
+            "default_res": "<:brainbot:992352663779946536> Hey! I'm Brain Bot, an AI-Powered discord chat bot.\n\nHanging out in {0} servers and",
+            "chatting_with": " chatting with {0} users!",
+            "no_one": " no one is currently chatting with me:("
+        },
+        "setup": {
+            "cant_see_and_message": "Well, this is awkward. I can't see <#{0}> or send messages...\nCould you help me get `View Channel` and `Send Messages` permissions?",
+            "cant_see": "Someone's playing tricks on me! <#{0}> is invisible!\nPerhaps giving me the `View Channel` permission could break this illusion.",
+            "cant_message": "I feel like a Hogwarts student without a wand!\nIn <#{0}>, I need the `Send Message` permission to cast my conversational spells.",
+            "success": "Setup complete! I am now operational in <#{0}>. Resistance is futile. (Just kidding... mostly)."
+        }
+    }
+}

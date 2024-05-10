@@ -1,0 +1,31 @@
+{
+    "modules": [
+        {
+            "label": "View All Commands",
+            "value": "commands",
+            "description": "Unlock my full potential with this comprehensive list.",
+            "emoji": {
+                "id": null,
+                "name": "⌨️"
+            }
+        },
+        {
+            "label": "Suggest a Feature",
+            "value": "suggest_a_feature",
+            "description": "Have a brilliant idea? I'm always looking to improve",
+            "emoji": {
+                "id": null,
+                "name": "🪄"
+            }
+        },
+        {
+            "label": "Report a Bug",
+            "value": "report_a_bug",
+            "description": "Something not working as expected? Let me know!",
+            "emoji": {
+                "id": null,
+                "name": "🐞"
+            }
+        }
+    ]
+}

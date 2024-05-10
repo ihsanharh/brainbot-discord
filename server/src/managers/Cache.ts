@@ -54,8 +54,11 @@ export async function set(k: string, v: string = "0", ttl?: number): Promise<boo
 {
 	const res = await fetch(`${ServerUrl}/v1/cache/${k}/${encodeURIComponent(v)}`, {
 		method: "POST",
+		headers: {
+			"Content-Type": "application/json"
+		},
 		body: JSON.stringify({
-			ttl
+			ttl: ttl ?? null
 		})
 	});
 	

@@ -1,8 +1,9 @@
 import { Request, Response, Router, json } from 'express';
 
-import { asOwnResponse } from "../../services/own";
-import { HttpStatusCode } from "../../utils/types/http";
+import { HttpStatusCode } from "../../types/http";
 import { OwnResponsePayloadType } from "../../typings";
+
+import { asOwnResponse } from "../../services/own";
 import redis from "../../services/redis";
 
 /**

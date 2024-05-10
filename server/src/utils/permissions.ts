@@ -1,11 +1,29 @@
-import { APIGuildMember, APIRole, APIOverwrite } from 'discord-api-types/v10';
+import { APIGuildMember, APIRole, APIOverwrite, PermissionFlagsBits } from 'discord-api-types/v10';
 import { CGuildChannelType } from '../typings';
+
 import { getGuildRoles } from './functions';
 
 /**
  * snippets from discord docs
  * https://discord.com/developers/docs/topics/permissions
  */
+
+function ALL(): bigint
+{
+    return Object.values(PermissionFlagsBits).reduce((prev: bigint, curr: bigint) => prev | curr);
+}
+
+export function from_string(permissions: string): bigint
+{
+	let bits = 0n;
+	let split_perms = permissions.split("|");
+
+	split_perms.forEach((perm: string) => {
+		bits |= BigInt(PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits]);
+	});
+
+	return bits;
+}
 
 export async function compute_base_permissions(member: APIGuildMember, guild_id: string): Promise<bigint>
 {
@@ -17,11 +35,15 @@ export async function compute_base_permissions(member: APIGuildMember, guild_id:
         if (member.roles.includes(role.id)) permission |= BigInt(role.permissions);
     });
 
+    if ((permission & PermissionFlagsBits.Administrator) == PermissionFlagsBits.Administrator) return ALL();
+
     return permission;
 }
 
 export async function compute_overwrites(base_permissions: bigint, member: APIGuildMember, channel: CGuildChannelType): Promise<bigint>
 {
+    if ((base_permissions & PermissionFlagsBits.Administrator) == PermissionFlagsBits.Administrator) return ALL();
+
     var permissions = base_permissions;
     let allow: bigint = 0n, deny: bigint = 0n;
 

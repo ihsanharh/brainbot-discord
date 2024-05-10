@@ -1,43 +1,20 @@
-import { fetch } from 'undici';
+import { RawFile } from '@discordjs/rest';
+import { Response, fetch } from 'undici';
 import * as Sharp from 'sharp';
 
-import { Dev, DiscordAppId, DiscordChannelStorage, Rsa, SdUrl, ServerUrl } from "../utils/config";
+import { APIAttachment, APIChannel, APIInteraction, APIMessage, APIUser, InteractionResponseType, MessageFlags, Routes } from 'discord-api-types/v10'; ;
+import { Imagine } from "../schemas/imagine";
+import { HttpStatusCode } from "../types/http";
+import { CheckPredictionType, OwnResponsePayload, PredictionRequestJson } from "../typings";
+
+import { respond } from "../interaction/commands/base";
+import { edit_original_response, delete_followup_message, followup_message } from "../interaction/interaction";
+import { Dev, DiscordChannelStorage, Rsa, SdUrl, ServerUrl } from "../utils/config";
 import { res } from "../utils/res";
-import { HttpStatusCode } from "../utils/types/http";
-import { APIChannel, APIMessage, APIUser, CheckPredictionType, MessageFlags, PredictionObject, Routes } from "../typings";
+import logger from "../services/logger";
 
-export async function edit_original_response(token: string, payload: any, message_id?: string): Promise<unknown>
-{
-	try
-	{
-		return await res.patch(Routes.webhookMessage(DiscordAppId, token, message_id??"@original"), payload);
-	} catch (e: unknown) {
-		return e;
-	}
-}
-
-export async function delete_original_response(token: string): Promise<unknown>
-{
-	try
-	{
-		return await res.delete(Routes.webhookMessage(DiscordAppId, token)).then((r) => {}).catch((err) => {});
-	}
-	catch(e: unknown) {
-		return e;
-	}
-}
-
-export async function delete_followup_message(token: string, message_id: string): Promise<unknown>
-{
-	try
-	{
-		return await res.delete(Routes.webhookMessage(DiscordAppId, token, message_id));
-	}
-	catch(e: unknown)
-	{
-		return e;
-	}
-}
+import * as available_models from "../constants/models.json";
+import * as values from "../constants/values.json";
 
 export async function check_prediction(token: string, currPred: CheckPredictionType, message_id?: string): Promise<CheckPredictionType>
 {
@@ -49,10 +26,16 @@ export async function check_prediction(token: string, currPred: CheckPredictionT
 			"Prediction-Id": `${currPred.prediction.id}`,
 			"Include-B64": "true"
 		}
-	});
+	})
 
-	let prediction = await get_pred.json() as PredictionObject;
+	const mimiic = await get_pred.text()
+	let prediction = JSON.parse(mimiic);
 	let helpful_m, tensec_m;
+
+	if (typeof prediction.logs === "string" && prediction?.logs.toLowerCase().includes("nsfw")) return {
+		prediction,
+		nsfw_found: true
+	}
 	
 	if (prediction.status === "processing" && prediction?.logs)
 	{
@@ -75,29 +58,25 @@ export async function check_prediction(token: string, currPred: CheckPredictionT
 		const created_time = Date.parse(prediction.created_at);
 		const now_time = Date.now() - created_time;
 		
-		if (now_time >= 10000 && !currPred.tensec_m)
+		if (now_time >= 15000 && !currPred.tensec_m)
 		{
 			/**
 			 * if the status hasnt been updated in 10 secs, send a follow up message.
 			 */
 			tensec_m = await followup_message(token, {
 				body: {
-					content: "The server is undergoing a restart after a period of inactivity. This process may require a few minutes, and your patience is appreciated.",
+					content: values.commands.imagine.unused_model,
 					flags: MessageFlags.Ephemeral
 				}
 			}) as APIMessage;
 		}
-		else if (now_time >= 30000 && !currPred.helpful_m)
+		else if (now_time >= 60000 && !currPred.helpful_m)
 		{
 			/**
-			 * here we do checking if the starting status is longer than 30 secs
+			 * here we do checking if the starting status is longer than 60 secs
 			 * incase the server is down, just to let the user know.
 			 */
-			const preset_messages = [
-				"This is taking a bit longer than expected, but I'm making progress!",
-				"I'm just double-checking some things, will do the task for you shortly.",
-				"This might require a little extra research, I'll get back to you as soon as I know more."
-			];
+			const preset_messages = values.commands.imagine.double_checking;
 
 			helpful_m = await followup_message(token, {
 				body: {
@@ -110,25 +89,20 @@ export async function check_prediction(token: string, currPred: CheckPredictionT
 
 	return {
 		prediction,
-		helpful_m,
-		tensec_m
+		helpful_m: currPred.helpful_m ?? helpful_m,
+		tensec_m: currPred.tensec_m ?? tensec_m
 	};
 }
 
-export async function followup_message(token: string, payload: any): Promise<unknown>
+export async function limits(author: APIUser): Promise<{ today: number; daily_quota: number|string; last_timestamp: number; }>
 {
-	try
-	{
-		return await res.post(`${Routes.webhook(DiscordAppId, token)}?wait=true`, payload);
-	}
-	catch (e: unknown) {
-		return e;
-	}
-}
+	const now_time = new Date().getTime();
 
-export async function limits(author: APIUser): Promise<number[]>
-{
-	if (author.id === Dev) return [0, new Date().getTime()];
+	if (author.id === Dev) return {
+		today: 0,
+		daily_quota: "∞",
+		last_timestamp: now_time
+	};
 
 	const req = await fetch(ServerUrl+"/v1/database/imagine/"+author.id, {
 		method: "GET",
@@ -136,33 +110,50 @@ export async function limits(author: APIUser): Promise<number[]>
 			"Authorization": Rsa
 		}
 	});
-	const json_body = await req.json() as any;
-	const isOver = new Date().getTime() >= Number(json_body?.d?.lastImaginationTime);
+
+	if (!req.ok) return {
+		today: 0,
+		daily_quota: values.MaxOut.ImagineTaskLimit,
+		last_timestamp: now_time
+	}
+
+	const imagine_c = (await req.json() as OwnResponsePayload).d as Imagine;
+	const isOver = now_time >= Number(imagine_c.lastImaginationTime);
 	
-	if (isOver || req.status === HttpStatusCode.NOT_FOUND)
+	if (isOver)
 	{
-		fetch(ServerUrl+"/v1/database/imagine/"+author.id, {
+		fetch(ServerUrl + "/v1/database/imagine/" + author.id, {
 			method: "DELETE",
 			headers: {
 				"Authorization": Rsa
 			}
 		});
 		
-		return [0, json_body?.d?.lastImaginationTime];
+		return {
+			today: 0,
+			daily_quota: values.MaxOut.ImagineTaskLimit,
+			last_timestamp: Number(imagine_c.lastImaginationTime)
+		}
 	}
 	
-	return [Array.from(json_body?.d?.imagination).length, json_body?.d?.lastImaginationTime];
+	return {
+		today: Array.from(imagine_c?.imagination ?? ["0"]).length,
+		daily_quota: values.MaxOut.ImagineTaskLimit,
+		last_timestamp: Number(imagine_c.lastImaginationTime)
+	}
 }
 
-export async function makeOneImage(images: any): Promise<Buffer>
+export async function makeOneImage(images: RawFile[]): Promise<Buffer>
 {
+	if (images.length !== 4) return images[0].data as Buffer;
+
 	const makeOverlay = async () => {
-		var res: any = [];
+		var res: Sharp.OverlayOptions[] = [];
 		
 		for (let i = 0; i < images.length; i++)
 		{
 			res.push({
-				input: await Sharp(images[i].data).resize({
+				input: await Sharp(images[i].data as Buffer).resize({
 					width: 256,
 					height: 256,
 					fit: "contain"
@@ -191,16 +182,16 @@ export async function makeOneImage(images: any): Promise<Buffer>
 	return await canvas.composite(await makeOverlay()).toBuffer();
 }
 
-export async function storeInStorage(generated: any, upscaled: boolean = false, data?: any): Promise<APIMessage>
+export async function storeInStorage(generated: RawFile[], upscaled: boolean = false, data?: APIMessage): Promise<APIMessage>
 {
 	if (!upscaled) return await res.post(Routes.channelMessages(DiscordChannelStorage), {
 		files: generated
 	}) as APIMessage;
 	else {
-		var getParentMessage = await res.get(Routes.channelMessage(DiscordChannelStorage, data.id)) as APIMessage;
+		var getParentMessage = await res.get(Routes.channelMessage(DiscordChannelStorage, data?.id as string)) as APIMessage;
 		let thread = getParentMessage?.thread;
 		
-		if (!thread) thread = await res.post(Routes.threads(DiscordChannelStorage, data.id), {
+		if (!thread) thread = await res.post(Routes.threads(DiscordChannelStorage, data?.id as string), {
 			body: {
 				name: "upscaled"
 			}
@@ -243,4 +234,49 @@ export async function update_metadata(author: APIUser, generatedUrl: string): Pr
 		lastImaginationTime: localMidnight.getTime(),
 		imagination: [generatedUrl]
 	}, "/imagine");
+}
+
+export function load_model(generation_data: { model: string, prompt?: string; negative_prompt?: string }): PredictionRequestJson
+{
+	if (!generation_data.model) generation_data.model = available_models._default.name;
+	if (!(generation_data.model in available_models)) return {
+		exist: false,
+		model: generation_data.model
+	};
+
+	const selected_model = available_models[generation_data.model as keyof typeof available_models] as PredictionRequestJson;
+	selected_model.default = { ...selected_model.default, ...available_models._default._ };
+	selected_model.exist = true;
+	selected_model.model = generation_data.model;
+
+	if ("prompt" in selected_model.default && generation_data.prompt) selected_model.default.prompt = generation_data.prompt;
+	if ("negative_prompt" in selected_model.default && generation_data.negative_prompt) selected_model.default.negative_prompt =  generation_data.negative_prompt;
+	
+	return selected_model;
+}
+
+export async function show_original_image(interaction: APIInteraction, message_id: string, image_id: string): Promise<void>
+{
+	try
+	{
+		const get_message = await res.get(Routes.channelMessage(DiscordChannelStorage, message_id)) as APIMessage;
+		const original_image = get_message.attachments?.filter((attachment: APIAttachment) => attachment.filename.startsWith(`result-${Number(image_id)+1}`))[0];
+
+		if (original_image) fetch(original_image.url).then(async (res: Response) => {
+			respond(interaction, {
+				type: InteractionResponseType.ChannelMessageWithSource,
+				data: {}
+			}, [
+				{
+					data: Buffer.from(await res.arrayBuffer()),
+					name: original_image.filename,
+					contentType: original_image.content_type
+				}
+			]);
+		});
+	}
+	catch (e: unknown)
+	{
+		logger.error(e)
+	}
 }

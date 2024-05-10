@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { HttpStatusCode } from "../typings";
+import { HttpStatusCode } from "../types/http";
 import { Rsa } from "./config";
 
 /*

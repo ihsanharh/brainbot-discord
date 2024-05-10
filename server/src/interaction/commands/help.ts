@@ -1,128 +1,74 @@
+import { nanoid } from 'nanoid';
 import { fetch } from 'undici';
 
-import { APIActionRowComponent, APIApplicationCommand, APIButtonComponentWithCustomId, APIEmbed, APIEmbedField, APIMessageActionRowComponent, APITextInputComponent, APIInteraction, APIInteractionGuildMember, APIUser, ApplicationCommandOptionType, CollectorData, ComponentType, InteractionResponseType, PermissionFlagsBits, Routes, TextInputStyle } from "../../typings";
+import { APIApplicationCommand, APIButtonComponentWithCustomId, APIChatInputApplicationCommandInteraction, APIEmbed, APIEmbedField, APIInteractionGuildMember, APIInteractionResponseCallbackData, APIMessageActionRowComponent, APIMessageComponentInteraction, APIMessageStringSelectInteractionData, APISelectMenuOption, APIUser, ComponentType, InteractionResponseType, MessageFlags, Routes } from 'discord-api-types/v10';
+import { CollectorData, command_metadata } from "../../typings";
+
 import Command, { respond } from "./base";
-import { colourInt, getDiscordUser, makeAvatarUrl, makeId } from "../../utils/functions";
+import { colourInt, getDiscordUser, makeAvatarUrl } from "../../utils/functions";
 import { Rsa, ServerUrl } from "../../utils/config";
 import { res } from "../../utils/res";
-const Colours = require("../../utils/colours.json");
 
-const HelpCommand = {
-	name: "help",
-	name_localizations: {}, 
-	description: "Send the help menu.",
-	description_localizations: {},
-	options: [
-		{
-			type: ApplicationCommandOptionType.String,
-			name: "choice",
-			name_localizations: {},
-			description: "Category you need help with.",
-			description_localizations: {},
-			required: false,
-			choices: [
-				{
-					name: "Commands list",
-					name_localizations: {},
-					value: "commands"
-				},
-				{
-					name: "Suggest a Feature",
-					name_localizations: {},
-					value: "suggest"
-				}
-			]
-		}
-	],
-	default_member_permissions: String(PermissionFlagsBits.UseApplicationCommands),
-	dm_permission: false
-}
+import { HelpCommand as JHelpCommand } from "../../constants/commands.json";
+import * as Colours from "../../constants/colours.json";
+import * as values from "../../constants/values.json";
+import * as JHelpMod from "../../constants/discord/help-mod.json";
+import * as JBackButton from "../../constants/discord/button/back.json";
+import * as JHelpMenu from "../../constants/discord/embed/help-menu.json";
+import * as JSuggestAFeature from "../../constants/discord/modal/suggest-a-feature.json";
+import * as JSelectMenu from "../../constants/discord/select-menu/help-select.json";
 
-const state = makeId(30);
-
-export const customId: {
-	[k: string]: any;
-} = {
+export const customId = {
 	CommandsListEmbed: `CommandList.Embed`,
-	HelpMenuButton: `HelpMenuHome.Button.${state}`,
+	HelpMenuButton: `HelpMenuHome.Button`,
 	HelpMenuEmbed: `HelpMenu.Embed`,
-	HelpMenuSelect: `HelpMenu.Select.${state}`,
-	SuggestAFeatureModal: `SuggestAFeature.Modal`,
+	HelpMenuSelect: `HelpMenu.Select`,
 	unknown: `unknown`,
+	long: (id: string, cid: string) => `${id}.${cid}`,
 	short: (id: string) => id.substring(0, id.lastIndexOf("."))
 }
 
-function Button(T: string): APIButtonComponentWithCustomId
+function BackButton(id: string): APIButtonComponentWithCustomId
 {
-	if (T.startsWith(customId.short(customId.HelpMenuButton))) return {
-		type: 2,
-		style: 2,
-		label: "⬅️ Back",
-		custom_id: T
-	} as APIButtonComponentWithCustomId
-	else return {
-		type: 2,
-		style: 2,
-		custom_id: customId.unknown
-	} as APIButtonComponentWithCustomId;
+	let back_button = JSON.parse(JSON.stringify(JBackButton));
+	back_button.custom_id = id;
+
+	return back_button;
 }
 
-function SelectMenu(T: string, disabled?: boolean): APIMessageActionRowComponent
+function SelectMenu(id: string): APIMessageActionRowComponent
 {
-	if (T.startsWith(customId.short(customId.HelpMenuSelect))) return {
-		type: 3,
-		custom_id: T,
-		disabled: disabled ?? false,
-		options: [
-			{
-				label: "View All Commands",
-				value: HelpCommand?.options[0].choices[0].value,
-				description: "Unlock my full potential with this comprehensive list."
-			},
-			{
-				label: "Suggest a Feature",
-				value: HelpCommand?.options[0].choices[1].value,
-				description: "Have a brilliant idea? I'm always looking to improve!"
-			}
-		],
-		min_values: 1,
-		max_values: 1
-	} as APIMessageActionRowComponent
-	else return {
-		type: 3,
-		custom_id: customId.unknown
-	} as APIMessageActionRowComponent;
+	let select_menu = JSON.parse(JSON.stringify(JSelectMenu));
+	select_menu.custom_id = id;
+	select_menu.options = JHelpMod.modules;
+
+	return select_menu;
 }
 
-async function Embed(T: string, user?: {me?: APIUser, member?: APIInteractionGuildMember}): Promise<APIEmbed>
+async function Embed(id: string, user?: {me?: APIUser, member?: APIInteractionGuildMember}, _commands?: APIApplicationCommand[]): Promise<APIEmbed>
 {
-	if (T === customId.HelpMenuEmbed)
+	if (id === customId.HelpMenuEmbed)
 	{
-		if (!user?.me) throw new Error(`'user.me' parameter is required for '${T}'!`);
-		
-		return {
-			title: `Hey there! I'm ${user.me.username}, your resident Discord hype-bot! <:brainbot:992352663779946536>`,
-			description: "I'm your friendly Discord bot, designed to enhance your chats with fun features, useful tools, and plenty of personality.\n\nNeed some fun in your chats? Maybe a little friendly competition?  Or just someone to automate those pesky tasks? I'm your bot!",
-			color: colourInt(Colours["blurple.MainColour"]),
-			thumbnail: {
-				url: makeAvatarUrl(user?.me)
-			}
-		} as APIEmbed;
+		if (!user?.me) throw new Error(`'user.me' parameter is required for '${id}'!`);
+		let HelpMenu = JSON.parse(JSON.stringify(JHelpMenu));
+
+		HelpMenu.color = colourInt(Colours[JHelpMenu.color as keyof typeof Colours]);
+		HelpMenu.thumbnail.url = makeAvatarUrl(user.me);
+
+		return HelpMenu;
 	}
-	else if (T === customId.CommandsListEmbed)
+	else if (id === customId.CommandsListEmbed)
 	{
-		if (!user?.member) throw new Error(`'user.member' parameter is required for '${T}'!`);
+		if (!user?.member) throw new Error(`'user.member' parameter is required for '${id}'!`);
 		
-		var CommandsFields: APIEmbedField[] = [];
-		var FetchCommands = await fetch(ServerUrl + "/_commands");
-		var RegisteredCommands: APIApplicationCommand[] = FetchCommands.ok? await FetchCommands.json() as APIApplicationCommand[]: [];
-		
-		if (!FetchCommands.ok || RegisteredCommands && RegisteredCommands.length < 1) CommandsFields.push({
-			name: "No commands available atm."
-		} as APIEmbedField);
+		let CommandsFields: APIEmbedField[] = [];
+		let title;
+
+		if (!_commands) CommandsFields.push(values.commands.help.Embed.CommandsList.NoCommands as APIEmbedField);
 		else
 		{
-			RegisteredCommands.filter((ApplicationCommand: APIApplicationCommand) => {
+			title = values.commands.help.Embed.CommandsList.title;
+			_commands.filter((ApplicationCommand: APIApplicationCommand) => {
 				const author_permissions = BigInt(user?.member?.permissions as string);
 				const command_permissions = BigInt(ApplicationCommand.default_member_permissions as string);
 				
@@ -133,94 +79,51 @@ async function Embed(T: string, user?: {me?: APIUser, member?: APIInteractionGui
 					name: `</${ApplicationCommand.name}:${ApplicationCommand.id}>`,
 					value: `${ApplicationCommand.description}`
 				} as APIEmbedField);
-			})
+			});
 		}
 		
 		return {
-			title: "Commands List",
+			title,
 			fields: [...CommandsFields],
 			color: colourInt(Colours["blurple.MainColour"]),
 			thumbnail: {
 				url: makeAvatarUrl(user?.me as APIUser)
 			}
-		} as APIEmbed;
+		};
 	}
 	else return {};
 }
 
-async function Modal(T: string): Promise<{custom_id: string; title: string; components: APIActionRowComponent<APITextInputComponent>[]}>
-{
-	if (T === customId.SuggestAFeatureModal)
-	{
-		return {
-			custom_id: T,
-			title: "Suggest A Feature",
-			components: [
-				{
-					type: ComponentType.ActionRow,
-					components: [
-						{
-							type: ComponentType.TextInput,
-							custom_id: "Feature",
-							label: "Feature Idea",
-							style: TextInputStyle.Short,
-							required: true,
-							placeholder: "Briefly describe your awesome suggestion..."
-						},
-					]
-				},
-				{
-					type: ComponentType.ActionRow,
-					components: [
-						{
-							type: ComponentType.TextInput,
-							custom_id: "FeatureDetails",
-							label: "Details (Optional)",
-							style: TextInputStyle.Paragraph,
-							required: false,
-							placeholder: "Explain why this would be useful, how it might work, etc."
-						}
-					]
-				}
-		    ]
-		}
-	}
-	else return {
-		custom_id: customId.unknown,
-		title: "unknown",
-		components: []
-	}
-}
-
-export async function handleHelpSelect(id: string, interaction: {[k: string]: any}): Promise<void>
+export async function handleHelpSelect(id: string, interaction: APIMessageComponentInteraction, _commands: APIApplicationCommand[]): Promise<void>
 {
 	var bot: APIUser = await getDiscordUser() as APIUser;
+	var selectmenu_data = interaction.data as APIMessageStringSelectInteractionData;
 
 	// select menu handling
-	if (interaction?.data['values']?.[0] === HelpCommand?.options[0].choices[0].value)
+	if (selectmenu_data['values']?.[0] === JHelpMod.modules[0].value)
 	{
 		// return when a command list selected
 		respond(interaction, {
 			type: InteractionResponseType.UpdateMessage,
 			data: {
-				embeds: [await Embed(customId.CommandsListEmbed, { me: bot ,member: interaction.member })],
+				embeds: [await Embed(customId.CommandsListEmbed, { me: bot, member: interaction.member }, _commands)],
 				components: [{
 					type: ComponentType.ActionRow,
-					components: [Button(customId.short(customId.HelpMenuButton)+"."+id)]
+					components: [BackButton(customId.long(customId.HelpMenuButton, id))]
 				}]
 			}
 		});
 	}
-	else if (interaction?.data['values']?.[0] === HelpCommand?.options[0].choices[1].value)
+	else if (selectmenu_data['values']?.[0] === JHelpMod.modules[1].value)
 	{
 		// return when suggest a feature selected
 		respond(interaction, {
 			type: InteractionResponseType.Modal,
-			data: await Modal(customId.SuggestAFeatureModal)
+			data: JSuggestAFeature
 		});
 	}
 	// button handling
-	else if (interaction?.data['custom_id'].startsWith(customId.short(customId.HelpMenuButton)))
+	else if (selectmenu_data['custom_id'].startsWith(customId.short(customId.HelpMenuButton)))
 	{
 		// when the user pressed back in the command list menu
 		respond(interaction, {
@@ -229,7 +132,7 @@ export async function handleHelpSelect(id: string, interaction: {[k: string]: an
 				embeds: [await Embed(customId.HelpMenuEmbed, { me: bot })],
 				components: [{
 					type: ComponentType.ActionRow,
-					components: [SelectMenu(customId.short(customId.HelpMenuSelect)+"."+id)]
+					components: [SelectMenu(customId.long(customId.HelpMenuSelect, id))]
 				}]
 			}
 		});
@@ -237,18 +140,25 @@ export async function handleHelpSelect(id: string, interaction: {[k: string]: an
 	else
 	{
 		// unknown???
+		const random_unknown_res = Math.floor(Math.random() * values.commands.help.unknown.length);
+
 		respond(interaction, {
 			type: InteractionResponseType.UpdateMessage,
-			data: {
-				content: "unknown...."
+			data: {}
+		});
+
+		await res.post(`${Routes.webhook(bot.id, interaction.token)}?wait=true`, {
+			body: {
+				content: values.commands.help.unknown[random_unknown_res],
+				flags: MessageFlags.Ephemeral
 			}
 		});
 	}
 }
 
-export async function _collectorCollect(data: CollectorData, interaction: APIInteraction): Promise<void>
+export async function _collectorCollect(data: CollectorData, interaction: APIMessageComponentInteraction, _commands: APIApplicationCommand[]): Promise<void>
 {
-	handleHelpSelect(data.id, interaction);
+	handleHelpSelect(data.id, interaction, _commands);
 }
 
 export async function _collectorEnd(data: CollectorData): Promise<void>
@@ -267,7 +177,7 @@ export async function _collectorEnd(data: CollectorData): Promise<void>
 						const ARIndex = message.components.indexOf(ActionRow);
 					    const ItsIndex = ActionRow.components.indexOf(Component);
 
-						Object.defineProperty(message.components[ARIndex].components[ItsIndex], `disabled`, {
+						Object.defineProperty(message.components[ARIndex].components[ItsIndex], "disabled", {
 							value: true,
 							enumerable: true
 						});
@@ -276,70 +186,95 @@ export async function _collectorEnd(data: CollectorData): Promise<void>
 			}
 	    }
 
-	 	await res.patch(Routes.channelMessage(data?.message?.['channel_id'] as string, data?.message?.id as string), {
-			body: {
-				components: message.components
-		    }
-	    });
+	 	try
+		{
+			await res.patch(Routes.channelMessage(data?.message?.['channel_id'] as string, data?.message?.id as string), {
+				body: {
+					components: message.components
+			    }
+	   		});
+		}
+		catch
+		{}
 	}
 }
 
 class Help extends Command
 {
-	constructor()
+	constructor(interaction: APIChatInputApplicationCommandInteraction)
 	{
-		super(HelpCommand);
+		super(interaction, JHelpCommand);
 	}
 	
 	async execute(): Promise<void>
 	{
-		const selected_category = this.get_options(HelpCommand?.options[0].name);
-		let resType = InteractionResponseType.ChannelMessageWithSource;
+		const collector_id = nanoid();
+		const selected_category = this.get_options(JHelpCommand.options[0].name);
 		let activateCollector = true;
-		var payload: any = {
+		var payload: APIInteractionResponseCallbackData = {
 			embeds: [await Embed(customId.HelpMenuEmbed, { me: this.me })],
 			components: [
 				{
 					type: ComponentType.ActionRow,
-					components: [SelectMenu(customId.HelpMenuSelect)]
+					components: [SelectMenu(customId.long(customId.HelpMenuSelect, collector_id))]
 				}
 			]
-		}
+		};
 		
 		if (selected_category)
 		{
 			activateCollector = false;
 
-			if (selected_category === HelpCommand?.options[0].choices[0].value) payload = {
-		        embeds: [await Embed(customId.CommandsListEmbed, { me: this.me ,member: this.command?.member })]
+			if (selected_category === JHelpMod.modules[0].value) payload = {
+		        embeds: [await Embed(customId.CommandsListEmbed, { me: this.me, member: this.command?.member }, this._commands)]
 			}
-			else if (selected_category === HelpCommand?.options[0].choices[1].value)
+			else if (selected_category === JHelpMod.modules[1].value)
 			{
-				resType = InteractionResponseType.Modal;
-				payload = await Modal(customId.SuggestAFeatureModal);
+				return this.reply({
+					type: InteractionResponseType.Modal,
+					data: JSuggestAFeature
+				});
 			}
 		}
 		
-		if (activateCollector) fetch(`${ServerUrl}/_collector/new`, {
-			method: "POST",
-			headers: {
-				"Authorization": Rsa,
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({
-				id: state,
-				command: true,
-				name: "help",
-				pwd: __dirname,
-				time: 60000,
-				ids: [...Object.values(customId)]
-			})
-		});
-		
+		if (activateCollector)
+		{
+			fetch(`${ServerUrl}/_collector/new`, {
+				method: "POST",
+				headers: {
+					"Authorization": Rsa,
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({
+					id: collector_id,
+					filename: "help",
+					pwd: __dirname,
+					time: 60000,
+					expand_on_click: true,
+					component_ids: [
+						customId.long(customId.HelpMenuButton, collector_id),
+						customId.long(customId.HelpMenuSelect, collector_id)
+					],
+					component_types: [
+						ComponentType.Button,
+						ComponentType.StringSelect
+					]
+				})
+			});
+		}
+
 		return this.reply({
-			type: resType,
+			type: InteractionResponseType.ChannelMessageWithSource,
 			data: payload
 		});
+	}
+
+	get_json(): command_metadata
+	{
+		let HelpCommand = JSON.parse(JSON.stringify(JHelpCommand));
+		HelpCommand.options[0].choices = JSON.parse(JSON.stringify(JHelpMod)).modules.map((mod: APISelectMenuOption) => { return { name: mod.label, value: mod.value } });
+
+		return HelpCommand;
 	}
 }
 

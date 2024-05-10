@@ -1,5 +1,5 @@
 import {
-	APIApplicationCommand,
+
 	APITextChannel,
 	APINewsChannel,
 	APIGuildVoiceChannel,
@@ -8,16 +8,14 @@ import {
 	APIThreadChannel,
 	APIGuildForumChannel,
 	APIChannel,
-	APIGuild,
 	APIGuildMember,
 	APIRole,
 	APIUser,
-	APIOverwrite,
-	CGuildChannelType,
 	ImageFormat,
 	RouteBases,
 	Routes
-} from "../typings";
+} from 'discord-api-types/v10';
+
 import { res } from "./res";
 import { DiscordAppId } from "./config";
 
@@ -116,61 +114,6 @@ export async function getGuildMember(guild_id: string, user_id: string): Promise
 	catch
 	{
 		return null;
-	}
-}
-
-export async function getGuildMemberPermissionsForChannel(member: APIGuildMember, channel: CGuildChannelType): Promise<{allow: bigint;deny: bigint;}>
-{
-	let allowed_b: string[] = ["0"];
-	let denied_b: string[] = ["0"];
-	const permissions_overwrites: APIOverwrite[] = channel?.permission_overwrites as APIOverwrite[];
-	const guild_roles = await getGuildRoles(channel.guild_id as string);
-	
-	guild_roles?.forEach((role: APIRole) => {
-		if (role.id === channel.guild_id as string) allowed_b.push(role.permissions);
-		if (member.roles.length >= 1 && member?.roles?.includes(role.id)) allowed_b.push(role.permissions);
-	});
-	
-	if (member?.user) {
-		if (permissions_overwrites.length < 1) return {
-			allow: BigInt(allowed_b.reduce((i: string, j: string) => String(BigInt(i) | BigInt(j)))),
-			deny: BigInt(denied_b[0])
-		}
-		
-		const permissions_overwrites_ids: string[] = permissions_overwrites.map((overwrite: APIOverwrite) => overwrite?.id);
-		
-		if (permissions_overwrites_ids.includes(member?.user?.id))
-		{
-			var permissions_overwrites_this_member = permissions_overwrites.filter((overwrite: APIOverwrite) => overwrite.id === member?.user?.id)[0];
-			
-			if (permissions_overwrites_this_member?.allow) allowed_b.push(permissions_overwrites_this_member.allow);
-			if (permissions_overwrites_this_member?.deny) allowed_b.push(permissions_overwrites_this_member.deny);
-		}
-		
-		if (member?.roles && member?.roles.length >= 1)
-		{
-			for (let i = 0; i < member?.roles.length; ++i)
-			{
-				if (permissions_overwrites_ids.includes(member?.roles[i]))
-				{
-					const permissions_overwrites_this_role = permissions_overwrites.filter((overwrite: APIOverwrite) => overwrite.id === member.roles[i])[0];
-					
-					if (permissions_overwrites_this_role?.allow) allowed_b.push(permissions_overwrites_this_role.allow);
-					if (permissions_overwrites_this_role?.deny) denied_b.push(permissions_overwrites_this_role.deny);
-				}
-			}
-		}
-		
-		let allow = BigInt(allowed_b.reduce((i: string, j: string) => String(BigInt(i) | BigInt(j)))),
-		deny = BigInt(denied_b.reduce((i: string, j: string) => String(BigInt(i) | BigInt(j))))
-		
-		if ((allow & deny) == deny) allow = allow & ~deny;
-		
-		return {allow, deny}
-	}
-	else
-	{
-		return {allow:0n,deny:0n}
 	}
 }
 

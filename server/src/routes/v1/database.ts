@@ -1,9 +1,10 @@
 import { Request, Response, Router, json } from 'express';
 import { Collection, Model } from 'mongoose';
 
-import { asOwnResponse } from "../../services/own";
-import { HttpStatusCode } from "../../utils/types/http";
+import { HttpStatusCode } from "../../types/http";
 import { OwnResponsePayloadType } from "../../typings";
+
+import { asOwnResponse } from "../../services/own";
 import BlacklistSchema from "../../schemas/blacklist";
 import ChatSchema from "../../schemas/chat";
 import ImagineSchema from "../../schemas/imagine";

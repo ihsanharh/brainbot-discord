@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 
 export interface Blacklist {
-	_id?: any;
+	_id?: string;
 	id: string;
 	type: string;
 }

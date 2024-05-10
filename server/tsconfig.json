@@ -11,8 +11,7 @@
 		"resolveJsonModule": true,
 		"moduleResolution": "node",
 		"module": "commonjs",
-		"target": "es2021",
-		"allowJs": true
+		"target": "es2021"
 	},
 	"include": ["./src/**/*", "./src/**/*.json", "environment.d.ts"]
 }

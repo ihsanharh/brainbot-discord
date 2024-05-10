@@ -2,16 +2,17 @@ import 'sharp'; // https://sharp.pixelplumbing.com/install#worker-threads
 import "./error";
 import "./services/redis";
 
-import { Express, Response, Request, NextFunction } from 'express';
 import * as express from 'express';
 import * as mongoose from 'mongoose';
 import helmet from 'helmet';
 
+import { Express, Response, Request } from 'express';
+import { HttpStatusCode } from "./types/http";
 import { OwnResponsePayloadType } from "./typings";
+
 import { collector_sub } from "./managers/Collector";
 import { asOwnResponse } from "./services/own";
 import { DatabaseUrl, ServerPort } from "./utils/config";
-import { HttpStatusCode } from "./utils/types/http";
 import logger from "./services/logger";
 import routes from "./routes";
 
@@ -26,7 +27,6 @@ App.disable("x-powered-by"); // disable x-powered-by for security
 App.use(helmet());
 
 App.use("/", routes);
-
 /*
  * Custom 404 and 500 handler
  */

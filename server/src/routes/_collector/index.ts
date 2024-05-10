@@ -1,6 +1,7 @@
 import { Request, Response, Router, json } from 'express';
 
-import { HttpStatusCode } from "../../typings";
+import { HttpStatusCode } from "../../types/http";
+
 import { verifyPrivateRouting } from "../../utils/middleware";
 import { _active_collector, createCollector, collected, setMessage } from "../../managers/Collector";
 

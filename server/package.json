@@ -4,8 +4,8 @@
   "description": "backend",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "concurrently -k \"tsc -w\" \"nodemon dist/index.js\"",
+    "build": "./node_modules/.bin/tsc",
+    "dev": "concurrently -k \"./node_modules/.bin/tsc -w\" \"nodemon dist/index.js\"",
     "start": "node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -17,10 +17,12 @@
   "license": "ISC",
   "dependencies": {
     "@discordjs/rest": "^2.2.0",
+    "discord-api-types": "^0.37.76",
     "discord-interactions": "^3.4.0",
     "express": "^4.19.2",
     "helmet": "^7.1.0",
     "mongoose": "^8.2.3",
+    "nanoid": "^3.3.7",
     "pino": "^8.19.0",
     "redis": "^4.6.13",
     "sharp": "^0.33.3"
@@ -29,7 +31,6 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.30",
     "concurrently": "^8.2.2",
-    "discord-api-types": "^0.37.76",
     "dotenv": "^16.4.5",
     "nodemon": "^3.1.0",
     "pino-pretty": "^11.0.0",

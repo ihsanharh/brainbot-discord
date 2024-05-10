@@ -1,73 +1,65 @@
-import { parentPort } from 'node:worker_threads';
+import { parentPort, TransferListItem } from 'node:worker_threads';
 
-import {
-	APIApplicationCommandOption,
-	APIInteraction,
-	APIInteractionResponse,
-	APIUser,
-	ApplicationCommandOptionType,
-	getOptionsReturnValues,
-	InteractionType,
-	InteractionResponseType,
-	command_metadata
-} from '../../typings';
-import { colourInt, getDiscordUser } from "../../utils/functions";
-const Colours = require("../../utils/colours.json");
+import { APIApplicationCommand, APIApplicationCommandInteractionDataBasicOption, APIApplicationCommandInteractionDataOption, APIChatInputApplicationCommandInteraction, APIInteraction, APIInteractionDataResolved, APIInteractionResponse, APIUser, ApplicationCommandOptionType, Routes } from 'discord-api-types/v10';
+import { InteractionResponse, command_metadata, getOptionsReturnValues } from '../../typings';
+
+import { getDiscordUser } from "../../utils/functions";
+import { res } from "../../utils/res";
+import { edit_original_response } from "../interaction";
+import { RawFile, RequestData } from '@discordjs/rest';
 
 class Command
 {
-	public name!: string;
-	public name_localizations?:
-	{
-		[key: string]: string;
-	};
-	public description!: string;
-	public description_localizations?:
-	{
-		[key: string]: string;
-	};
-	public options?: APIApplicationCommandOption[];
-	public default_member_permissions?: string;
-	public dm_permission?: boolean;
-	public type?: number | string;
-	public author!: APIUser;
-	public command!: {[k:string]:any};
-	public me!: APIUser;
-	public _applicationCommand!: command_metadata;
+	public name: string;
+	public author: APIUser;
+	public command: APIChatInputApplicationCommandInteraction;
+	public me: APIUser;
+	public _applicationCommand: command_metadata;
+	public _commands: APIApplicationCommand[];
 	
-	constructor(metadata: command_metadata)
+	constructor(interaction: APIChatInputApplicationCommandInteraction, metadata: command_metadata)
 	{
-		Object.assign(this, metadata);
-		Object.defineProperty(this, "_applicationCommand", {
-			enumerable: true,
-			writable: false,
-			value: metadata
-		});
+		this.name = metadata.name;
+		this.author = interaction?.member?.user ?? interaction?.user as APIUser;
+		this.command = interaction;
+		this.me = {} as APIUser;
+		this._commands = [];
+		this._applicationCommand = metadata;
 	}
 	
+	pretty(str: string, ...args: string[]): string
+	{
+		return parse_command(str, this._commands, ...args);
+	}
+
 	get_options(option_name: string): getOptionsReturnValues | string | number | boolean | null
 	{
 		let _hoistedOptions = this.command.data?.options;
 		if (!_hoistedOptions) return null;
-		
-		const option = _hoistedOptions.filter((opt: any) => opt?.name === option_name)[0];
-		var mentionableOnly = JSON.parse(JSON.stringify(ApplicationCommandOptionType));
-		var property = [
+
+		const option = _hoistedOptions.filter((opt: APIApplicationCommandInteractionDataOption) => opt?.name === option_name)[0] as APIApplicationCommandInteractionDataBasicOption;
+		let mentionableOnly = JSON.parse(JSON.stringify(ApplicationCommandOptionType)) as {[k: string]: number;};
+		let property = [
 			["User", "Member", "Attachment", "Channel", "Role", "Message"],
 			["String", "Boolean", "Integer", "Number"]
 		];
+
+		if (!option) return null;
 		
 		property[1].forEach((e: string) => delete mentionableOnly[e]);
 		
-		if ([...Object.values(mentionableOnly).filter((k: any) => !isNaN(k))].includes(option.type))
+		if ([...Object.values(mentionableOnly).filter((k: number) => !isNaN(k))].includes(option.type))
 		{
 			var values: getOptionsReturnValues = {} as getOptionsReturnValues;
 			
 			property[0].forEach((prop: string) => {
-				if (`${String(prop).toLowerCase()}s` in this.command?.data?.resolved) Object.defineProperty(values, String(prop).toLowerCase(), {
-					enumerable: true,
-					value: { ...this.command?.data?.resolved[`${String(prop).toLowerCase()}s`][option.value] }
-				});
+				if (this.command.data && this.command.data.resolved)
+				{	
+					if (`${String(prop).toLowerCase()}s` in this.command?.data?.resolved) Object.defineProperty(values, String(prop).toLowerCase(), {
+						enumerable: true,
+						value: { ...this.command?.data?.resolved[`${String(prop).toLowerCase()}s` as keyof APIInteractionDataResolved]?.[option.value as string] }
+					});
+				}
 			});
 			
 			return values;
@@ -81,49 +73,55 @@ class Command
 	execute(): void
 	{}
 	
-	invalid_usage(messages: { text: string; reason?: string; }, usages: string[], error: boolean = false) {
-		let _text = `**Invalid command usage! ${messages.text}**`;
-		
-		if (usages.length > 1) {
-			var examples = usages.join("\n  ");
-			
-			_text += `\n\n❓ Example(s) of usage**:\n  ${examples}`;
-		}
-		
-		if (error) _text = `**Error: ${messages.text}**`;
-		if (error && messages.reason) _text += `\n${messages.reason}`;
-		
-		return this.reply({
-			type: InteractionResponseType.ChannelMessageWithSource,
-			data: {
-				embeds: [
-					{
-						color: colourInt(Colours['red.InvalidUsage']),
-						description: `❌ ${_text}`
-					}
-				]
-			}
-		});
-	}
-	
-	async props(interaction: APIInteraction): Promise<void>
+	async props(commands: APIApplicationCommand[]): Promise<void>
 	{
-		this.command = interaction;
-		this.author = interaction?.member?.user ?? interaction?.user as APIUser;
 		this.me = await getDiscordUser() as APIUser;
-		
+		this._commands = commands;
+
 		return this.execute();
 	}
 	
+	async edit_reply(interaction: APIChatInputApplicationCommandInteraction, payload: RequestData): Promise<unknown>
+	{
+		return await edit_original_response(interaction, payload);
+	}
+
 	reply(payload: APIInteractionResponse): void
 	{
-		respond(this.command, payload);
+		respond(this.command, payload)
+	}
+
+	get_json(): command_metadata
+	{
+		return this._applicationCommand;
 	}
 }
 
-export async function respond(interaction: {[k:string]:any}, payload: APIInteractionResponse): Promise<void>
+export function parse_command(str: string, _commands: APIApplicationCommand[], ...args: string[]): string
 {
-	parentPort?.postMessage(payload);
+	if (!str) return "";
+
+	for (let i = 0; i < args.length; i++)
+	{
+		str = str.replace(`{${i}}`, args[i]);
+	}
+
+	for (const application_command of _commands)
+	{
+		let key = `</${application_command.name}>`;
+
+		if (str.includes(key)) str = str.replace(key, application_command.id);
+	}
+
+	return str;
+}
+
+export async function respond(interaction: APIInteraction, payload: APIInteractionResponse, files?: RawFile[]): Promise<void>
+{
+	res.post(Routes.interactionCallback(interaction.id, interaction.token), {
+		body: payload,
+		files
+	});
 }
 
 export default Command;

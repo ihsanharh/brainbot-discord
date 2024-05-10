@@ -1,7 +1,6 @@
 import { OwnResponsePayloadType, OwnResponsePayload } from "../typings";
 import { formatOwnResponse } from "../utils/functions";
-import { HttpStatusCode } from "../utils/types/http";
-import * as responses from "../constants/responses";
+import * as responses from "../constants/responses.json";
 
 /**
  * format response before sending it to client.
@@ -29,7 +28,8 @@ export function asOwnResponse(argv: string[], type: OwnResponsePayloadType, r_st
 	if (r_str)
 	{
 		let r_str_s = r_str?.split(".");
-		let get_str = {...responses}?.[r_str_s?.[0]]?.[r_str_s?.[1]];
+		let get_str = responses[r_str_s[0] as keyof typeof responses];
+		get_str = get_str[r_str_s?.[1] as keyof typeof get_str];
 		
 		if (get_str) m = formatOwnResponse(get_str, argv);
 		else m = formatOwnResponse(r_str, argv);

@@ -1,8 +1,11 @@
-import * as express from 'express';
 import { Request, Response, Router } from 'express';
 import { Worker } from 'node:worker_threads';
+import * as express from 'express';
 
-import { APIInteractionResponse, HttpStatusCode } from "../../typings";
+import { APIInteractionResponse } from 'discord-api-types/v10';
+import { HttpStatusCode } from "../../types/http";
+
+import { getAllApplicationCommands } from "../../managers/ApplicationCommand";
 import { _active_collector } from "../../managers/Collector";
 import { verifyDiscordRequest } from "./verify";
 
@@ -18,15 +21,12 @@ InteractionRoute.post("/", async (req: Request, res: Response) => {
 	const thread = new Worker(__dirname.replace("routes/_interaction", "interaction/handler"), {
 		workerData: {
 			collectors,
-			interaction: JSON.stringify(req.body)
+			interaction: JSON.stringify(req.body),
+			commands: JSON.stringify(await getAllApplicationCommands())
 		}
 	});
 	
-	thread.on('message', (message: APIInteractionResponse) => {
-		return res.status(HttpStatusCode.OK).send(message);
-	});
-	
-	thread.once('exit', (code: number) => res.status(HttpStatusCode.FORBIDDEN).end());
+	thread.on('message', (message: APIInteractionResponse) => res.status(HttpStatusCode.OK).send(message));
 });
 
 export { InteractionRoute };

@@ -1,45 +1,34 @@
-import Command from "./base";
-import { Integer } from "../../constants/values"
-import { PermissionFlagsBits, InteractionResponseType, MessageFlags } from "../../typings";
-import * as Queue from "../../managers/Cache";
-import { limits } from "../../stablediffusion/addition";
-import { generate } from "../../stablediffusion/imagine";
+import { APIChatInputApplicationCommandInteraction, APIMessage, InteractionResponseType, MessageFlags } from 'discord-api-types/v10';
+import { PredictionLimit, PredictionRequestJson, command_metadata } from "../../typings";
 
-const ImagineCommand = {
-	name: "imagine",
-	name_localizations: {},
-	description: "Imagine an image based on your prompt",
-	description_localizations: {},
-	options: [
-		{
-			type: 3,
-			name: "prompt",
-			name_localizations: {},
-			description: "The prompt to imagine",
-			description_localizations: {},
-			required: true
-		}
-	],
-	default_member_permissions: String(PermissionFlagsBits.UseApplicationCommands),
-	dm_permission: true,
-}
+import { followup_message } from "../../interaction/interaction";
+import { limits, load_model } from "../../stablediffusion/addition";
+import { generate } from "../../stablediffusion/imagine";
+import * as Queue from "../../managers/Cache";
+import Command from "./base";
+
+import { ImagineCommand } from "../../constants/commands.json";
+import * as available_models from "../../constants/models.json";
+import * as values from "../../constants/values.json";
 
 class Imagine extends Command
 {
-	constructor()
+	constructor(interaction: APIChatInputApplicationCommandInteraction)
 	{
-		super(ImagineCommand);
+		super(interaction, ImagineCommand);
 	}
 	
 	async execute(): Promise<void>
 	{
-		const prompt: string = this.get_options("prompt") as string;
-		const rate_limits: number[] = await limits(this.author);
+		const model: string = this.get_options(ImagineCommand.options[0].name) as string;
+		const prompt: string = this.get_options(ImagineCommand.options[1].name) as string;
+		const negative_prompt: string = this.get_options(ImagineCommand.options[2].name) as string;
+		const rate_limits: PredictionLimit = await limits(this.author);
 		
-		if (rate_limits[0] >= Integer.ImagineTaskLimit) return this.reply({
+		if (typeof rate_limits.daily_quota === "number" && rate_limits.today >= rate_limits.daily_quota) return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content: `Due to extreme demand, The Imagine command (including the upscaler) is limited to ${Integer.ImagineTaskLimit} uses per day. You'll be able to use it again <t:${Math.floor(rate_limits[1]/1000)}:R>`,
+				content: this.pretty(values.commands.imagine.limit_reached, String(rate_limits.daily_quota), `<t:${Math.round(rate_limits.last_timestamp/1000)}>`),
 				flags: MessageFlags.Ephemeral
 			}
 		});
@@ -47,19 +36,49 @@ class Imagine extends Command
 		if (await Queue.has(`imagine_${this.author?.id}`)) return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content: "`You have one task in progress. Please wait for its completion.`",
+				content: values.commands.imagine.calmdown,
 				flags: MessageFlags.Ephemeral
 			}
 		});
 		
-		Queue.set(`imagine_${this.author?.id}`, `${Date.now()}`, Integer.ImagineTaskTimeout);
-		generate(prompt, this.author, this.command?.token, rate_limits[0]);
-		return this.reply({
+		Queue.set(`imagine_${this.author?.id}`, `${new Date().getTime()}`, values.TimeOut.ImagineTaskTimeout);
+
+		const use_model = load_model({ model, prompt, negative_prompt });
+		let no_prompt;
+
+		if (!use_model.exist) return this.reply({
 			type: InteractionResponseType.ChannelMessageWithSource,
 			data: {
-				content: `**${prompt}** - <@${this.author?.id}> (Waiting to start)`
+				content: values.commands.imagine.model_not_found,
+				flags: MessageFlags.Ephemeral
 			}
 		});
+
+		this.reply({
+			type: InteractionResponseType.ChannelMessageWithSource,
+			data: {
+				content: this.pretty(values.commands.imagine.predict_status, use_model.default?.prompt as string, this.author.id, "Waiting to start")
+			}
+		});
+
+		if (!prompt) no_prompt = await followup_message(this.command, {
+			body: {
+				content: values.commands.imagine.no_prompt,
+				flags: MessageFlags.Ephemeral
+			}
+		}) as APIMessage;
+
+		generate(use_model, this.author, this.command?.token, rate_limits, no_prompt);
+	}
+
+	get_json(): command_metadata
+	{
+		const models = Object.entries<PredictionRequestJson>(JSON.parse(JSON.stringify(available_models))).filter(([name, _]) => name !== "_default").map(([_, model]) => { return { name: model.name, value: _ } });
+		const JImagineCommand = JSON.parse(JSON.stringify(ImagineCommand));
+
+		JImagineCommand.options[0].choices = models;
+
+		return JImagineCommand;
 	}
 }
 

@@ -1,25 +1,21 @@
 import { fetch, Response } from 'undici';
 
-import { HttpStatusCode, InteractionResponseType, PermissionFlagsBits, OwnResponsePayload } from "../../typings";
+import { APIChatInputApplicationCommandInteraction, InteractionResponseType } from 'discord-api-types/v10';
+import { HttpStatusCode } from "../../types/http";
+import { OwnResponsePayload } from "../../typings";
+
 import { Chat } from "../../schemas/chat";
 import { Rsa, ServerUrl } from "../../utils/config";
 import Command from "./base";
 
-const DeleteCommand = {
-	name: "delete",
-	name_localizations: {},
-	description: "Delete bot configuration and prune stored messages.",
-	description_localizations: {},
-	options: [],
-	default_member_permissions: String(PermissionFlagsBits.UseApplicationCommands | PermissionFlagsBits.ManageGuild),
-	dm_permission: false
-}
+import { DeleteCommand } from "../../constants/commands.json";
+import * as values from "../../constants/values.json";
 
 class Delete extends Command
 {
-	constructor()
+	constructor(interaction: APIChatInputApplicationCommandInteraction)
 	{
-		super(DeleteCommand);
+		super(interaction, DeleteCommand);
 	}
 	
 	async execute(): Promise<void>
@@ -31,37 +27,54 @@ class Delete extends Command
 				"Authorization": Rsa
 			}
 		}) as Response;
-		const json_body = await get_guild_data.json() as OwnResponsePayload;
-		const json_guild_data = json_body.d as Chat;
 		
-		if (get_guild_data.ok && json_guild_data.channel !== null)
+		if (get_guild_data.ok)
 		{
-			fetch(`${ServerUrl}/v1/database/chat/${this.command.guild_id}`, {
-				method: "PATCH",
-				headers: {
-					"Authorization": Rsa,
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					$set: {
-						channel: null
-					}
-				})
-			});
-			
-			return this.reply({
-				type: InteractionResponseType.ChannelMessageWithSource,
-				data: {
-					content: `❌ Fine! i won't talk in <#${json_guild_data.channel}> anymore.`
+			const json_body = await get_guild_data.json() as OwnResponsePayload;
+
+			if (json_body && json_body.d)
+			{
+				const json_guild_data = json_body.d as Chat;
+
+				if (json_guild_data.channel !== null)
+				{
+					fetch(`${ServerUrl}/v1/database/chat/${this.command.guild_id}`, {
+						method: "PATCH",
+						headers: {
+							"Authorization": Rsa,
+							"Content-Type": "application/json"
+						},
+						body: JSON.stringify({
+							$set: {
+								channel: null
+							}
+						})
+					});
+					
+					return this.reply({
+						type: InteractionResponseType.ChannelMessageWithSource,
+						data: {
+							content: this.pretty(values.commands.delete.DataDeleted, json_guild_data.channel)
+						}
+					});
 				}
-			});
+				else
+				{
+					return this.reply({
+						type: InteractionResponseType.ChannelMessageWithSource,
+						data: {
+							content: this.pretty(values.commands.delete.DataReset)
+						}
+					});
+				}
+			}
 		}
-		else if (get_guild_data.status === HttpStatusCode.NOT_FOUND || get_guild_data.ok && json_guild_data.channel === null)
+		else if (get_guild_data.status === HttpStatusCode.NOT_FOUND)
 		{
 			return this.reply({
 				type: InteractionResponseType.ChannelMessageWithSource,
 				data: {
-					content: `It seems like i have never been used here before. Use /setup to start.`
+					content: this.pretty(values.commands.delete.NeverUSedBefore)
 				}
 			});
 		}
