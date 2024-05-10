@@ -1,0 +1,30 @@
+# Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
+# Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
+pkgname=DPP
+pkgver=10.0.29
+pkgrel=1
+pkgdesc="apk for DPP"
+url="https://github.com/brainboxdotcc/DPP/"
+arch="all"
+license="MIT"
+options="!check !strip"
+source="https://github.com/brainboxdotcc/DPP/releases/download/v$pkgver/DPP-$pkgver.zip"
+makedepends="cmake zlib openssl"
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+    make
+}
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver/build"
+    mkdir -p "$pkgdir"
+    make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+e694767edc373f9899d8365a5f218fb667334e00568af7fa20d847fe5173a858ff475a9c9df68fccc69754d75ea29f8b1377a9fa6799a328bf4d0f976bba20c3  DPP-10.0.29.zip
+"

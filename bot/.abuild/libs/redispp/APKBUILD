@@ -1,0 +1,35 @@
+# Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
+# Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
+pkgname=redis-plus-plus
+pkgver=1.3.12
+pkgrel=1
+pkgdesc="apk for redis-plus-plus"
+url="https://github.com/sewenew/redis-plus-plus"
+arch="all"
+license="MIT"
+options="!check"
+source="https://github.com/sewenew/redis-plus-plus/archive/refs/tags/$pkgver.zip"
+makedepends="cmake"
+
+prepare() {
+    default_prepare
+    find /home/packager/packages/ -type f -name "hiredis-*.apk" -exec sudo apk add {} \;
+}
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+    mkdir build
+    cd build
+    cmake -DCMAKE_PREFIX_PATH=/usr -DCMAKE_INSTALL_PREFIX=/usr ..
+    make
+}
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver/build"
+    mkdir -p "$pkgdir"
+    make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+8ea341d0c27cb2f0d454edff6e50b6ac9325c438d80ab52fed8a1472b8c071c7b8ecdb1a3e7715723154081668865c4b1bd214f34ce3178476a1af696bed9e68  1.3.12.zip
+"

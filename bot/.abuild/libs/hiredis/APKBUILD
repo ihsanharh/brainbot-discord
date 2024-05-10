@@ -1,0 +1,26 @@
+# Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
+# Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
+pkgname=hiredis
+pkgver=1.2.0
+pkgrel=1
+pkgdesc="apk for hiredis"
+url="https://github.com/redis/hiredis"
+arch="all"
+license="MIT"
+options="!check !strip"
+source="https://github.com/redis/hiredis/archive/refs/tags/v$pkgver.zip"
+makedepends="cmake"
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+    make
+}
+
+package() {
+    mkdir -p "$pkgdir"
+    make PREFIX=/usr DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+d2418bf40f19109b7c2916122e803a4c09c33e13b633621d7b9d2d1514a57782fa7e3fb3137442a679d22f31698078299d9c6bbca91b473e49970dac26b0883d  v1.2.0.zip
+"

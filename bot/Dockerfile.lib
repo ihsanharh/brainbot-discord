@@ -1,0 +1,29 @@
+# A Container for building apk for the bot library
+FROM alpine:3.19
+
+RUN apk add sudo build-base alpine-sdk openssl-dev zlib-dev
+
+# create packager user with sudo privileges
+RUN adduser -D packager
+RUN addgroup packager abuild
+RUN echo "packager ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/packager
+
+USER packager
+WORKDIR /home/packager
+
+# copy any rsa key for signing the apk later, will throw error if no rsa key found.
+COPY ./.abuild/*rsa* /home/packager/.abuild/
+
+# chown from root to packager for .abuild dir and its content recursively
+RUN sudo chown -R packager:packager /home/packager/.abuild
+
+# copy the pub key to /etc/apk/keys
+RUN find /home/packager/.abuild -type f -name "*.pub" -exec sudo cp {} /etc/apk/keys \;
+
+# set the PACKAGER_PRIVKEY in /home/packager/.abuild/abuild.conf
+# set the PACKAGER_PRIVKEY in /etc/abuild.conf
+RUN find /home/packager/.abuild -type f -name "*rsa" -exec sh -c "\
+       echo "PACKAGER_PRIVKEY={}" >> /home/packager/.abuild/abuild.conf \
+    && echo "PACKAGER_PRIVKEY={}" | sudo tee -a /etc/abuild.conf > /dev/null" \;
+
+ENTRYPOINT [ "sh", "-c" ]

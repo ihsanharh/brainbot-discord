@@ -1,0 +1,50 @@
+version: "3.7"
+
+services:
+  hiredis:
+    image: brainbot/lib:latest
+    entrypoint: sh -c "\ cat /etc/abuild.conf \
+      && sudo chown -R packager:packager /home/packager/hiredis \
+      && cd "/home/packager/hiredis/main/hiredis" \
+      && abuild checksum \
+      && REPODEST=/home/packager/packages/hiredis abuild -r"
+    volumes:
+      - type: bind
+        source: ./bot/.abuild/libs/hiredis/
+        target: /home/packager/hiredis/main/hiredis/
+      - type: bind
+        source: ./bot/.abuild/packages/
+        target: /home/packager/packages/
+
+  redispp:
+    image: brainbot/lib:latest
+    entrypoint: sh -c "\
+      sudo chown -R packager:packager /home/packager/redispp \
+      && cd "/home/packager/redispp/main/redispp" \
+      && abuild checksum \
+      && REPODEST=/home/packager/packages/redispp abuild -r"
+    depends_on:
+      hiredis:
+        condition: service_completed_successfully
+    volumes:
+      - type: bind
+        source: ./bot/.abuild/libs/redispp/
+        target: /home/packager/redispp/main/redispp/
+      - type: bind
+        source: ./bot/.abuild/packages/
+        target: /home/packager/packages/
+
+  dpp:
+    image: brainbot/lib:latest
+    entrypoint: sh -c "\
+      sudo chown -R packager:packager /home/packager/DPP \
+      && cd "/home/packager/DPP/main/DPP" \
+      && abuild checksum \
+      && REPODEST=/home/packager/packages/DPP abuild -r"
+    volumes:
+      - type: bind
+        source: ./bot/.abuild/libs/DPP/
+        target: /home/packager/DPP/main/DPP/
+      - type: bind
+        source: ./bot/.abuild/packages/
+        target: /home/packager/packages/
