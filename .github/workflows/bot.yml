@@ -23,7 +23,7 @@ jobs:
               run: docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
 
             - name: Build bot image
-              run: docker build bot -f bot/Dockerfile -t brainbot/env:latest ./bot
+              run: docker buildx build -f bot/Dockerfile -t brainbot/env:latest ./bot
 
             - name: Save the bot image
               run: docker image save -o brainbot.tar.gz brainbot/env:latest
