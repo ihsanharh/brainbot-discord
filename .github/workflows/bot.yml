@@ -20,13 +20,15 @@ jobs:
                 run-id: ${{vars.LIBRARY_RUN_ID}}
 
             - name: Build base image
-              run: docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
+              run: |
+                ls -la ./bot/.abuild/
+                docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
 
             - name: Build bot image
-              run: docker buildx build -f bot/Dockerfile -t brainbot/env:latest ./bot
+              run: docker buildx build -f bot/Dockerfile -t brainbot:latest ./bot
 
             - name: Save the bot image
-              run: docker image save -o brainbot.tar.gz brainbot/env:latest
+              run: docker image save -o brainbot.tar.gz brainbot:latest
 
             - name: Upload image artifact
               uses: actions/upload-artifact@v4
