@@ -1,0 +1,38 @@
+name: Bot image CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+    build-image:
+        name: build bot image
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Download library
+              uses: actions/download-artifact@v4
+              with:
+                name: packages
+                github-token: ${{secrets.GITHUB_TOKEN}}
+                run-id: ${{env.LIBRARY_RUN_ID}}
+
+            - name: Unpack packages
+              run: |
+                unzip packages.zip -d bot/.abuild/packages
+
+            - name: Build base image
+              run: docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
+
+            - name: Build bot image
+              run: docker build bot -f bot/Dockerfile -t brainbot/env:latest ./bot
+
+            - name: Save the bot image
+              run: docker image save -o brainbot.tar.gz brainbot/env:latest
+
+            - name: Upload image artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: brainbot
+                path: brainbot.tar.gz
