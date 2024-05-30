@@ -30,7 +30,8 @@ jobs:
             - name: Build bot's library
               run: |
                 whoami
-                mkdir -p bot/.abuild/packages
+                mkdir -p ./bot/.abuild/packages
+                chmod 777 ./bot/.abuild/packages
                 ls -l ./bot/.abuild/
                 docker compose -f docker-compose.lib.yaml up
 
