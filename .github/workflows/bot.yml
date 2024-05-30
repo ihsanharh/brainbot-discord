@@ -16,7 +16,7 @@ jobs:
               with:
                 name: packages
                 github-token: ${{secrets.GITHUB_TOKEN}}
-                run-id: ${{env.LIBRARY_RUN_ID}}
+                run-id: ${{vars.LIBRARY_RUN_ID}}
 
             - name: Unpack packages
               run: |
