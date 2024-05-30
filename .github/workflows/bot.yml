@@ -19,6 +19,13 @@ jobs:
                 github-token: ${{secrets.GITHUB_TOKEN}}
                 run-id: ${{vars.LIBRARY_RUN_ID}}
 
+            - name: Load pub key
+              shell: bash
+              run: |
+                echo "$SIGN_PUB_KEY" > ./bot/.abuild/key.rsa.pub
+              env: 
+                SIGN_PUB_KEY: ${{secrets.SIGN_PUB_KEY}}
+
             - name: Build base image
               run: |
                 ls -la ./bot/.abuild/
