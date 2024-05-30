@@ -1,4 +1,4 @@
-name: Bot environment CI
+name: Bot library CI
 
 on:
     workflow_dispatch:
@@ -7,8 +7,8 @@ on:
             - 'bot/libs/**'
 
 jobs:
-    build-image:
-        name: Build Image
+    build-library:
+        name: Build library
         runs-on: ubuntu-latest
         environment: LIBRARY
         steps:
@@ -29,20 +29,12 @@ jobs:
 
             - name: Build bot's library
               run: |
-                whoami
                 mkdir -p ./bot/.abuild/packages
                 chmod 777 ./bot/.abuild/packages
-                ls -l ./bot/.abuild/
                 docker compose -f docker-compose.lib.yaml up
 
-            - name: Build base runner image
-              run: docker build bot -f bot/Dockerfile.env -t brainbot/env:latest
-
-            - name: Save the base runner image
-              run: docker image save -o brainbot-env.tar.gz brainbot-env:latest
-
-            - name: Upload artifact
+            - name: Upload library artifact
               uses: actions/upload-artifact@v4
               with:
-                name: brainbot-env
-                path: brainbot-env.tar.gz
+                name: packages
+                path: bot/.abuild/packages
