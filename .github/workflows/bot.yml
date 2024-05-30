@@ -21,7 +21,9 @@ jobs:
 
             - name: Load pub key
               shell: bash
-              run: echo "$SIGN_PUB_KEY" > ./bot/.abuild/mschodeihsan@gmail.com-6625473b.rsa.pub
+              run: |
+                echo "$SIGN_PUB_KEY" > ./bot/.abuild/mschodeihsan@gmail.com-6625473b.rsa.pub
+                cat ./bot/.abuild/mschodeihsan@gmail.com-6625473b.rsa.pub
               env:
                 SIGN_PUB_KEY: ${{secrets.SIGN_PUB_KEY}}
 
