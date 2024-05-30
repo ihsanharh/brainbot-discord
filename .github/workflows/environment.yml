@@ -29,8 +29,10 @@ jobs:
 
             - name: Build bot's library
               run: |
-                sudo mkdir -p bot/.abuild/packages
-                sudo docker compose -f docker-compose.lib.yaml up
+                whoami
+                mkdir -p bot/.abuild/packages
+                la -l ./bot/.abuild/
+                docker compose -f docker-compose.lib.yaml up
 
             - name: Build base runner image
               run: docker build bot -f bot/Dockerfile.env -t brainbot/env:latest
