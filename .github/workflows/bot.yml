@@ -31,7 +31,7 @@ jobs:
                 docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
 
             - name: test
-              run: docker run brainbot/env:latest ls -l /.abuild
+              run: docker run brainbot/env:latest "ls -l /.abuild"
             - name: Build bot image
               run: docker buildx build -f bot/Dockerfile -t brainbot:latest ./bot
 
