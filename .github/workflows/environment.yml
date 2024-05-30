@@ -18,6 +18,7 @@ jobs:
               run: |
                 echo $SIGN_PRIV_KEY > ./bot/.abuild/key.rsa
                 echo $SIGN_PUB_KEY > ./bot/.abuild/key.rsa.pub
+                cat ./bot/.abuild/key.rsa.pub
               env: 
                 SIGN_PRIV_KEY: ${{secrets.SIGN_PRIV_KEY}}
                 SIGN_PUB_KEY: ${{secrets.SIGN_PUB_KEY}}
