@@ -15,14 +15,9 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                 name: packages
-                path: .
+                path: ./bot/.abuild/packages
                 github-token: ${{secrets.GITHUB_TOKEN}}
                 run-id: ${{vars.LIBRARY_RUN_ID}}
-
-            - name: Unpack packages
-              run: |
-                ls -la
-                unzip packages.zip -d bot/.abuild/packages
 
             - name: Build base image
               run: docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
