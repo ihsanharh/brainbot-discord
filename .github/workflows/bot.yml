@@ -28,9 +28,10 @@ jobs:
             - name: Build base image
               run: |
                 ls -la ./bot/.abuild/
-                ls -la /etc/apk/keys/
                 docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
 
+            - name: test
+              run: docker run brainbot/env:latest ls -la /etc/apk/keys/
             - name: Build bot image
               run: docker buildx build -f bot/Dockerfile -t brainbot:latest ./bot
 
