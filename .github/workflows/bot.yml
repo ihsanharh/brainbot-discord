@@ -21,8 +21,8 @@ jobs:
 
             - name: Unpack packages
               run: |
+                ls -la
                 unzip packages.zip -d bot/.abuild/packages
-                ls -l
 
             - name: Build base image
               run: docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
