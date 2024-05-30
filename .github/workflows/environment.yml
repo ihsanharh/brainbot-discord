@@ -30,7 +30,7 @@ jobs:
             - name: Build bot's library
               run: |
                 mkdir -p bot/.abuild/packages
-                ls -ld bot/.abuild/
+                ls -ld bot/.abuild/packages
                 docker compose -f docker-compose.lib.yaml up
 
             - name: Build base runner image
