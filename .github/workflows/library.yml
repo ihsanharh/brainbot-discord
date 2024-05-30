@@ -31,7 +31,7 @@ jobs:
               run: |
                 mkdir -p ./bot/.abuild/packages
                 chmod 777 ./bot/.abuild/packages
-                la -ls ./bot/.abuild/
+                ls -la ./bot/.abuild/
                 cat ./bot/.abuild/key.rsa.pub
                 docker compose -f docker-compose.lib.yaml up
 
