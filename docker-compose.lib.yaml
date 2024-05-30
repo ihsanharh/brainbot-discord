@@ -3,7 +3,7 @@ version: "3.7"
 services:
   hiredis:
     image: brainbot/lib:latest
-    entrypoint: sh -c "\ cat /etc/abuild.conf \
+    entrypoint: sh -c "\
       && sudo chown -R packager:packager /home/packager/hiredis \
       && cd "/home/packager/hiredis/main/hiredis" \
       && abuild checksum \

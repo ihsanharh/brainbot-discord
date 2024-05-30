@@ -31,7 +31,6 @@ jobs:
               run: |
                 mkdir -p ./bot/.abuild/packages
                 chmod 777 ./bot/.abuild/packages
-                ls -la ./bot/.abuild/
                 docker compose -f docker-compose.lib.yaml up
 
             - name: Upload library artifact
