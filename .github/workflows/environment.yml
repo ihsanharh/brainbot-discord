@@ -26,7 +26,9 @@ jobs:
               run: docker build bot -f bot/Dockerfile.lib -t brainbot/lib:latest
 
             - name: Build bot's library
-              run: docker compose -f docker-compose.lib.yaml up
+              run: |
+                mkdir -p ./bot/.abuild/packages
+                docker compose -f docker-compose.lib.yaml up
 
             - name: Build base runner image
               run: docker build bot -f bot/Dockerfile.env -t brainbot/env:latest
