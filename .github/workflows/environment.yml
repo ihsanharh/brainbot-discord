@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
     push:
         paths:
-            - 'bot/Dockerfile.env'
+            - 'bot/libs/**'
 
 jobs:
     build-image:
@@ -14,10 +14,24 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Build Image
-              run: docker build bot -f bot/Dockerfile.env -t brainbot-env:latest
+            - name: Load signing key
+              run: |
+                echo $SIGN_PRIV_KEY > ./bot/.abuild/key.rsa
+                echo $SIGN_PUB_KEY > ./bot/.abuild/key.rsa.pub
+              env: 
+                SIGN_PRIV_KEY: ${{secrets.SIGN_PRIV_KEY}}
+                SIGN_PUB_KEY: ${{secrets.SIGN_PUB_KEY}}
 
-            - name: Save Image
+            - name: Build packager image
+              run: docker build bot -f bot/Dockerfile.lib -t brainbot/lib:latest
+
+            - name: Build bot's library
+              run: docker compose -f docker-compose.lib.yaml up
+
+            - name: Build base runner image
+              run: docker build bot -f bot/Dockerfile.env -t brainbot/env:latest
+
+            - name: Save the base runner image
               run: docker image save -o brainbot-env.tar.gz brainbot-env:latest
 
             - name: Upload artifact
