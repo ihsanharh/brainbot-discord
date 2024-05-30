@@ -31,7 +31,7 @@ jobs:
               run: |
                 whoami
                 mkdir -p bot/.abuild/packages
-                la -l ./bot/.abuild/
+                ls -l ./bot/.abuild/
                 docker compose -f docker-compose.lib.yaml up
 
             - name: Build base runner image
