@@ -1,7 +1,7 @@
 # Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
 # Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
 pkgname=DPP
-pkgver=10.0.29
+pkgver=10.0.30
 pkgrel=1
 pkgdesc="apk for DPP"
 url="https://github.com/brainboxdotcc/DPP/"
@@ -26,5 +26,5 @@ package() {
 }
 
 sha512sums="
-e694767edc373f9899d8365a5f218fb667334e00568af7fa20d847fe5173a858ff475a9c9df68fccc69754d75ea29f8b1377a9fa6799a328bf4d0f976bba20c3  DPP-10.0.29.zip
+bac2f10c9b1e69e1154a70a77210f7628077af92a96673191e34c5f3d5187108396d002d78ce382d0ed227351acba13de5c04bd8b3d58375f127a8c64fcfa981  DPP-10.0.30.zip
 "
