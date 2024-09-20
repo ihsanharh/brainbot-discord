@@ -1,0 +1,33 @@
+# Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
+# Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
+pkgname=mongo-c-driver
+pkgver=1.27.4
+pkgrel=1
+pkgdesc="The Official MongoDB driver for C language"
+url="https://github.com/mongodb/mongo-c-driver"
+arch="all"
+license="Apache-2.0"
+options="!check"
+source="https://github.com/mongodb/mongo-c-driver/releases/download/$pkgver/mongo-c-driver-$pkgver.tar.gz"
+makedepends="cmake python3"
+
+build() {
+    cmake -S . -B build \
+    -D ENABLE_EXTRA_ALIGNMENT=OFF \
+    -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+    -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+    -D CMAKE_INSTALL_PREFIX=/usr \
+    -D BUILD_VERSION="$pkgver" \
+    -D ENABLE_MONGOC=ON
+    cmake --build build --config RelWithDebInfo --parallel
+}
+
+package() {
+    mkdir -p "$pkgdir"
+    DESTDIR="$pkgdir" cmake --install build --config RelWithDebInfo
+    rm -rf "$pkgdir/usr/share/mongo-c-driver"
+}
+
+sha512sums="
+4568ce2c96d130807a606b2b2e4428420b77619381388c9b53961676e9e9d03bf3b8685638cc2f185319f5ff582dd34e9e6ff7f2d8798cca9b11adb693011af2  mongo-c-driver-1.27.4.tar.gz
+"

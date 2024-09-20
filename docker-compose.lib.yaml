@@ -3,6 +3,7 @@ version: "3.7"
 services:
   hiredis:
     image: brainbot/lib:latest
+    profiles: ["hiredis", "redis"]
     entrypoint: sh -c "\
       sudo chown -R packager:packager /home/packager/hiredis \
       && cd "/home/packager/hiredis/main/hiredis" \
@@ -18,6 +19,7 @@ services:
 
   redispp:
     image: brainbot/lib:latest
+    profiles: ["redispp", "redis"]
     entrypoint: sh -c "\
       sudo chown -R packager:packager /home/packager/redispp \
       && cd "/home/packager/redispp/main/redispp" \
@@ -36,6 +38,7 @@ services:
 
   dpp:
     image: brainbot/lib:latest
+    profiles: ["dpp"]
     entrypoint: sh -c "\
       sudo chown -R packager:packager /home/packager/DPP \
       && cd "/home/packager/DPP/main/DPP" \
@@ -45,6 +48,41 @@ services:
       - type: bind
         source: ./bot/.abuild/libs/DPP/
         target: /home/packager/DPP/main/DPP/
+      - type: bind
+        source: ./bot/.abuild/packages/
+        target: /home/packager/packages/
+
+  mongo-c-driver:
+    image: brainbot/lib:latest
+    profiles: ["mongoc", "mongo-driver"]
+    entrypoint: sh -c "\
+      sudo chown -R packager:packager /home/packager/mongo-c-driver \
+      && cd "/home/packager/mongo-c-driver/main/mongo-c-driver" \
+      && abuild checksum \
+      && REPODEST=/home/packager/packages/mongo-c-driver abuild -r"
+    volumes:
+      - type: bind
+        source: ./bot/.abuild/libs/mongo-c-driver/
+        target: /home/packager/mongo-c-driver/main/mongo-c-driver/
+      - type: bind
+        source: ./bot/.abuild/packages/
+        target: /home/packager/packages/
+
+  mongo-cxx-driver:
+    image: brainbot/lib:latest
+    profiles: ["mongocxx", "mongo-driver"]
+    entrypoint: sh -c "\
+      sudo chown -R packager:packager /home/packager/mongo-cxx-driver \
+      && cd "/home/packager/mongo-cxx-driver/main/mongo-cxx-driver" \
+      && abuild checksum \
+      && REPODEST=/home/packager/packages/mongo-cxx-driver abuild -r"
+    depends_on:
+      mongo-c-driver:
+        condition: service_completed_successfully
+    volumes:
+      - type: bind
+        source: ./bot/.abuild/libs/mongo-cxx-driver/
+        target: /home/packager/mongo-cxx-driver/main/mongo-cxx-driver/
       - type: bind
         source: ./bot/.abuild/packages/
         target: /home/packager/packages/

@@ -1,0 +1,37 @@
+# Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
+# Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
+pkgname=mongo-cxx-driver
+pkgver=3.10.2
+pkgrel=2
+pkgdesc="C++ Driver for MongoDB"
+url="https://github.com/mongodb/mongo-cxx-driver"
+arch="all"
+license="Apache-2.0"
+options="!check"
+source="https://github.com/mongodb/mongo-cxx-driver/releases/download/r$pkgver/mongo-cxx-driver-r$pkgver.tar.gz"
+makedepends="cmake"
+
+prepare() {
+	default_prepare
+    find /home/packager/packages -type f -name "mongo-c-driver*.apk" -exec sudo apk add {} \;
+}
+
+build() {
+	cd $pkgname-r$pkgver
+    cmake -S . -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DMONGOCXX_OVERRIDE_DEFAULT_INSTALL_PREFIX=OFF \
+	-DCMAKE_INSTALL_PREFIX=/usr \
+    -DENABLE_BSONCXX_POLY_USE_IMPLS=ON
+    cmake --build build
+}
+
+package() {
+	cd src/$pkgname-r$pkgver
+    mkdir -p "$pkgdir"
+    DESTDIR="$pkgdir" cmake --build build --target install
+}
+
+sha512sums="
+4dd27ceec1edc57556b1611eb37f16b3233f0985511d12efb4640307d9c8d09ca17fe91ca9dce9c02a611b39711fbf4161120a02786bd2b8f97c0800b30a918a  mongo-cxx-driver-r3.10.2.tar.gz
+"
