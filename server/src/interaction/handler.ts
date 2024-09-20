@@ -6,10 +6,10 @@ import { APIApplicationCommand, APIInteraction, InteractionResponseType, Interac
 import { CollectorData, } from "../typings";
 
 import { parse_command, respond } from "./commands/base";
-import { upscaler } from "../stablediffusion/upscale";
+import { upscaler } from "../txt2img/upscale";
 import { DiscordCommandChannel, Rsa, ServerUrl } from "../utils/config";
 import { res } from "../utils/res";
-import { show_original_image } from "../stablediffusion/addition";
+import { show_original_image } from "../txt2img/addition";
 import logger from "../services/logger";
 
 async function main(): Promise<void>

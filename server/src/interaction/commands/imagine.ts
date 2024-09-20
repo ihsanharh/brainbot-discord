@@ -2,8 +2,8 @@ import { APIChatInputApplicationCommandInteraction, APIMessage, InteractionRespo
 import { PredictionLimit, PredictionRequestJson, command_metadata } from "../../typings";
 
 import { followup_message } from "../../interaction/interaction";
-import { limits, load_model } from "../../stablediffusion/addition";
-import { generate } from "../../stablediffusion/imagine";
+import { limits, load_model } from "../../txt2img/addition";
+import { generate } from "../../txt2img/imagine";
 import * as Queue from "../../managers/Cache";
 import Command from "./base";
 

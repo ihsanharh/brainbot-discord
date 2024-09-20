@@ -24,6 +24,9 @@ export async function check_prediction(token: string, currPred: CheckPredictionT
 		headers: {
 			"Acccept": "application/json",
 			"Prediction-Id": `${currPred.prediction.id}`,
+			"model": `${currPred.prediction.model}`,
+			"ua": `${currPred.prediction.ua}`,
+			"aoid": `${currPred.prediction.aoid}`,
 			"Include-B64": "true"
 		}
 	})
