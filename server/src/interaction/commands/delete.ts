@@ -46,7 +46,7 @@ class Delete extends Command
 						},
 						body: JSON.stringify({
 							$set: {
-								channel: null
+								channel: ""
 							}
 						})
 					});

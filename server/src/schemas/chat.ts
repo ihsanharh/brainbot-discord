@@ -3,7 +3,7 @@ import { Schema, model } from 'mongoose';
 export interface Chat {
 	_id: string;
 	count: number;
-	channel: string | null;
+	channel: string;
 	version: string;
 	tweaks: {
 		sensible_wacky: number;
@@ -16,7 +16,7 @@ export interface Chat {
 export default model("chat", new Schema<Chat>({
 	_id: { type: String, required: true },
 	count: { type: Number, default: 0 },
-	channel: { type: String, default: null },
+	channel: { type: String, default: "" },
 	version: { type: String, default: "v1" },
 	tweaks: {
 		sensible_wacky: { type: Number, default: 50 },
