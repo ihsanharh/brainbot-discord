@@ -4,6 +4,7 @@
 #include <chrono> // chrono
 #include <thread>
 #include <mutex>
+#include <mongocxx/instance.hpp> // mongocxx::instance
 
 /**
  * caching policy. to save up ram, only cache role and guild in the memory
@@ -18,12 +19,15 @@ constexpr dpp::cache_policy_t cache_policy {
 };
 // Construct cluster: TOKEN, Intents, Shards Count, Cluster id, Max Cluster, Compress, cache policy, Discord request thread, External request thread
 dpp::cluster Client(Brain::Env("BRAIN_BOTD_TOKEN"), Brain::Enabled_GatewayIntents, std::stoi(Brain::Env("SHARDS_COUNT")), 0, 1, true, cache_policy, 15, 15);
-// then assign it to static member of Brain class
 dpp::cluster* Brain::BOT = &Client;
+
+// Connect to MongoDB
+mongocxx::instance instance{};
+mongocxx::client Mongo{mongocxx::uri{Brain::Env("DATABASE_URL")}};
+mongocxx::client* Brain::MONGO = &Mongo;
 
 // Create Redis Object
 sw::redis::Redis RedisClient(Brain::Env("REDIS")+"?socket_timeout=50ms");
-// Assign it to static Brain class member
 sw::redis::Redis* Brain::REDIS = &RedisClient;
 
 // Create a pub/sub from created redis object
@@ -101,28 +105,13 @@ void check_redis()
 	}
 }
 
-void prepare_proxy()
-{
-	SPDLOG_TRACE("Preparing Proxy.");
-	
-	Brain::loadFile("./chat/list.txt", ":", [](bool is_string, std::string line, unsigned long pos) {
-		std::string proxy_id = line.substr(0, pos);
-		std::string url = line.substr(pos + 1);
-		
-		Brain::REDIS->hset("proxy", proxy_id, url);
-		Brain::REDIS->hdel("proxy_u", proxy_id);
-		
-		SPDLOG_TRACE("All Proxy loaded.");
-	});
-}
-
 int main()
 {
 	spdlog::set_level(spdlog::level::trace);
 	Listeners::bind();
 	check_redis();
-	prepare_proxy();
 	update_guild_count();
+
 	Brain::BOT->start(dpp::st_wait);
 	
 	return 0;

@@ -8,9 +8,9 @@ COPY . .
 RUN cmake -DCMAKE_BUILD_TYPE=Release -B ./build
 RUN cmake --build ./build
 RUN sh -c "mkdir -p /tmp/nes \
-    && find /usr \( -name "*redis*" -o -name "*dpp*" \) -depth -exec sudo cp -R --parents {} /tmp/ \;"
+    && find /usr \( -name "*redis*" -o -name "*dpp*" -o -name "*mongo*" -o -name "*bson*" \) -depth -exec sudo cp -R --parents {} /tmp/ \;"
 
-FROM alpine:3.19
+FROM alpine:3.19 AS runner
 
 WORKDIR /home/runner/bot
 
@@ -22,4 +22,4 @@ COPY --from=builder /bot/build/brainbot .
 RUN adduser -D runner
 USER runner
 
-ENTRYPOINT [ "./brainbot" ]
+ENTRYPOINT [ "LD_LIBRARY_PATH=/usr/lib/mongocxx ./brainbot" ]

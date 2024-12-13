@@ -1,4 +1,8 @@
 #include "chatter.h"
+#include "dbhelper.h"
+#include "mongo.h"
+
+#include <bsoncxx/json.hpp> // bsoncxx::to_json()
 
 /**
  * return the obtained proxy to redis
@@ -21,6 +25,7 @@ int abort_session(const nlohmann::json &session_obj, uint16_t status)
 	std::string proxy_id = session_obj["proxy_id"].get<std::string>();
 	std::optional<std::string> check_session = Brain::REDIS->get("session:" + user_id);
 	
+	if (check_session) Brain::REDIS->del("session:" + user_id);
 	if (status == static_cast<uint16_t>(HttpStatus::Code::Forbidden))
 	{
 		Brain::REDIS->hset("proxy_b", proxy_id, "0");
@@ -281,6 +286,7 @@ void respond(const dpp::message &message, const std::chrono::time_point<std::chr
 			if (res.status != HttpStatus::toInt(HttpStatus::Code::OK))
 			{
 				SPDLOG_TRACE("[@{}] Proxy is not OK ({}: {})", author_id, res.status, res.body);
+				if (res.status == 0) return;
 				int cancel_session = abort_session(session_obj, res.status);
 				
 				SPDLOG_TRACE("[@{}] Session aborted: {}", author_id, cancel_session);
@@ -304,7 +310,7 @@ void respond(const dpp::message &message, const std::chrono::time_point<std::chr
 			// trigger typing indicator on discord
 			Brain::BOT->request("https://discord.com/api/v10/channels/" + std::to_string(message.channel_id) + "/typing", dpp::http_method::m_post, [message, generated_response, author_id, start](const dpp::http_request_completion_t& res) {
 				// make the typing a bit longer, the length of the response times 200 milliseconds
-				std::this_thread::sleep_for(std::chrono::milliseconds(generated_response.size() * 200));
+				std::this_thread::sleep_for(std::chrono::milliseconds(generated_response.size() * 100));
 				
 				std::optional<std::string> lmi = Brain::REDIS->get("last_message_id:" + std::to_string(message.channel_id));
 				dpp::message ms = dpp::message(message.channel_id, generated_response);
@@ -388,15 +394,17 @@ void handle_channel_checking(const dpp::message &message, nlohmann::json raw_mes
 	handle_member_checking(message, raw_message, this_channel, *me_member, start);
 }
 
-void handle_guild_fetching(const dpp::message &message, nlohmann::json raw_message, const std::string guild_id, std::string r_guild_data, const std::chrono::time_point<std::chrono::system_clock> start)
+void handle_guild_data(const dpp::message &message, nlohmann::json raw_message, const std::string guild_id, std::string r_guild_data, const std::chrono::time_point<std::chrono::system_clock> start)
 {
 	const nlohmann::json json_guild_data = nlohmann::json::parse(r_guild_data);
 	
-	if (json_guild_data["d"]["channel"].is_null()) return;
+	if (!json_guild_data["channel"].is_string()) set_channel_empty(guild_id);
 	
-	std::string channel_id = json_guild_data["d"]["channel"].get<std::string>();
+	std::string channel_id = json_guild_data["channel"].get<std::string>();
+
+	if (channel_id == "") return;
+
 	std::optional<std::string> channel_in_cache = Brain::REDIS->get("channel:" + guild_id + ":" + channel_id);
-	
 	std::multimap<std::string, std::string> discord_req_headers = {
 		{ "Accept", "application/json" },
 		{ "Authorization", "Bot " + Brain::Env("BRAIN_BOTD_TOKEN") }
@@ -406,7 +414,10 @@ void handle_guild_fetching(const dpp::message &message, nlohmann::json raw_messa
 	{
 		SPDLOG_TRACE("[@{}] Fetching channel", message.author.id);
 		Brain::BOT->request("https://discord.com/api/v10/channels/" + channel_id, dpp::http_method::m_get, [message, raw_message, guild_id, json_guild_data, channel_id, discord_req_headers, start](const dpp::http_request_completion_t& res) {
-			if (res.status != HttpStatus::toInt(HttpStatus::Code::OK)) return;
+			if (res.status != HttpStatus::toInt(HttpStatus::Code::OK)) {
+				if (res.status == HttpStatus::toInt(HttpStatus::Code::NotFound)) set_channel_empty(guild_id);
+				return;
+			};
 			
 			handle_channel_checking(message, raw_message, guild_id, res.body, discord_req_headers, start);
 			Brain::REDIS->setex("channel:" + guild_id + ":" + channel_id, Constants::TTL::ChannelCache, res.body);
@@ -444,19 +455,18 @@ void chatter(const dpp::message &message, nlohmann::json raw_message)
 	if (!guild_data_cache)
 	{
 		SPDLOG_TRACE("[@{}] Fetching guild_data", message.author.id);
-		Brain::BOT->request(Brain::Env("SERVER_URL") + "/v1/database/chat/" + guild_id, dpp::http_method::m_get, [message, raw_message, guild_id, start](const dpp::http_request_completion_t& res) {
-			if (res.status != HttpStatus::toInt(HttpStatus::Code::OK)) return;
-			
-			handle_guild_fetching(message, raw_message, guild_id, res.body, start);
-			Brain::REDIS->setex("guild_data:" + guild_id, Constants::TTL::GuildDataCache, res.body);
-		},  "", "application/json", {
-			{ "Accept", "application/json" },
-			{ "Authorization", Brain::Env("SERVER_RSA") }
-		});
+		mongocxx::collection chat_collections = Brain::MONGO->database(Brain::Env("DATABASE_NAME")).collection("chats");
+		mongocxx::stdx::optional<bsoncxx::document::value> guild_data = chat_collections.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", guild_id)));
+		if (!guild_data) return;
+
+		const std::string str_guild_data = bsoncxx::to_json(*guild_data, bsoncxx::ExtendedJsonMode::k_relaxed);
+		
+		handle_guild_data(message, raw_message, guild_id, str_guild_data, start);
+		Brain::REDIS->setex("guild_data:" + guild_id, Constants::TTL::GuildDataCache, str_guild_data);
 		
 		return;
 	}
 	
 	SPDLOG_TRACE("[@{}] Using guild_data from cache", message.author.id);
-	handle_guild_fetching(message, raw_message, guild_id, *guild_data_cache, start);
+	handle_guild_data(message, raw_message, guild_id, *guild_data_cache, start);
 }
