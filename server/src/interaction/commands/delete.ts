@@ -6,6 +6,7 @@ import { OwnResponsePayload } from "../../typings";
 
 import { Chat } from "../../schemas/chat";
 import { Rsa, ServerUrl } from "../../utils/config";
+import * as Cache from "../../managers/Cache";
 import Command from "./base";
 
 import { DeleteCommand } from "../../constants/commands.json";
@@ -36,7 +37,7 @@ class Delete extends Command
 			{
 				const json_guild_data = json_body.d as Chat;
 
-				if (json_guild_data.channel !== null)
+				if (json_guild_data.channel !== "")
 				{
 					fetch(`${ServerUrl}/v1/database/chat/${this.command.guild_id}`, {
 						method: "PATCH",
@@ -50,6 +51,8 @@ class Delete extends Command
 							}
 						})
 					});
+
+					Cache.remove(`guild_data:${this.command.guild_id}`);
 					
 					return this.reply({
 						type: InteractionResponseType.ChannelMessageWithSource,

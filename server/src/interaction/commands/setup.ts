@@ -6,6 +6,7 @@ import { getOptionsReturnValues } from "../../typings";
 import { Rsa, ServerUrl } from "../../utils/config";
 import { getGuildChannels, getGuildMember } from "../../utils/functions";
 import { compute_permission } from '../../utils/permissions';
+import * as Cache from "../../managers/Cache";
 import Command from "./base";
 
 import { SetupCommand } from "../../constants/commands.json";
@@ -82,6 +83,8 @@ class Setup extends Command
 						}
 					})
 				});
+
+				Cache.remove(`guild_data:${guild_id}`);
 			}
 			else
 			{
