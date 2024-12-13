@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   redis:
     image: redis:7.2.3-alpine
@@ -7,9 +5,11 @@ services:
       --notify-keyspace-events KEA
     networks:
       - brainbot_dev
+    ports:
+      - 6379:6379
   
   server:
-    entrypoint: sh -c "npm install && npm run dev"
+    entrypoint: sh -c "npm install --include=dev && npm run dev"
     depends_on:
       - redis
     env_file: 
@@ -26,7 +26,7 @@ services:
     working_dir: /app/server
 
   chat:
-    entrypoint: sh -c "pip install redis requests && python3 -u ./src/main.py"
+    entrypoint: sh -c "pip install redis requests && python3 -u ./main.py"
     depends_on:
       - redis
     env_file:
@@ -41,25 +41,22 @@ services:
     working_dir: /chat
 
   bot:
-    entrypoint: sh -c "cd bot && cmake -B ./build && cmake --build ./build && ./build/brainbot"
-    depends_on:
-      - chat
-      - server
-    image: brainbot-env:0.0.5
+    entrypoint: sh -c "\
+         cmake -B ./build \
+      && cmake --build ./build \
+      && ./build/brainbot"
+    image: brainbot/env:latest
     networks:
       - brainbot_dev
     tty: true
     volumes:
       - type: bind
-        source: ./bot
-        target: /app/bot
-      - type: bind
-        source: ./chat/list.txt
-        target: /app/bot/chat/list.txt
+        source: ./bot/
+        target: /home/runner/bot
       - type: bind
         source: ./.env.dev
-        target: /app/bot/.env
-    working_dir: /app
+        target: /home/runner/bot/.env
+    working_dir: /home/runner/bot
 
 networks:
   brainbot_dev:
