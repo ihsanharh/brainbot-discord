@@ -25,9 +25,15 @@ int abort_session(const nlohmann::json &session_obj, uint16_t status)
 	std::string proxy_id = session_obj["proxy_id"].get<std::string>();
 	std::optional<std::string> check_session = Brain::REDIS->get("session:" + user_id);
 	
+	if (status == 0)
+	{
+		if (!check_session) return_proxy(proxy_id);
+		return 1;
+	}
 	if (check_session) Brain::REDIS->del("session:" + user_id);
 	if (status == static_cast<uint16_t>(HttpStatus::Code::Forbidden))
 	{
+		SPDLOG_TRACE("[@{}] Got 403 Forbidden response from {}", user_id, proxy_id);
 		Brain::REDIS->hset("proxy_b", proxy_id, "0");
 	}
 	else
@@ -286,7 +292,6 @@ void respond(const dpp::message &message, const std::chrono::time_point<std::chr
 			if (res.status != HttpStatus::toInt(HttpStatus::Code::OK))
 			{
 				SPDLOG_TRACE("[@{}] Proxy is not OK ({}: {})", author_id, res.status, res.body);
-				if (res.status == 0) return;
 				int cancel_session = abort_session(session_obj, res.status);
 				
 				SPDLOG_TRACE("[@{}] Session aborted: {}", author_id, cancel_session);
