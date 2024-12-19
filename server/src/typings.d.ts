@@ -21,6 +21,8 @@ import { Readable } from 'stream';
 
 export type CGuildChannelType = APITextChannel|APINewsChannel|APIGuildVoiceChannel|APIGuildStageVoiceChannel|APIGuildCategoryChannel|APIThreadChannel|APIGuildForumChannel;
 
+export type ActionId = "DATABASE"|"CACHE"|"COLLECTOR";
+
 export enum OwnResponsePayloadType
 {
 	REQUEST,
@@ -28,6 +30,35 @@ export enum OwnResponsePayloadType
 	DATABASE_QUERY,
 	CACHE,
 	DISCORD_API
+}
+
+export enum ActionDataOp
+{
+	FIND_ONE,
+	GET_ONE,
+	CREATE_ONE,
+	UPDATE_ONE,
+
+	FIND,
+	GET,
+	CREATE,
+	UPDATE,
+	
+	COLLECT,
+	END,
+	RESULT
+}
+
+interface ActionData
+{
+	op: ActionDataOp;
+	params: unknown;
+}
+
+export interface Action
+{
+	id: ActionId;
+	data: ActionData;
 }
 
 export interface InteractionResponse

@@ -3,6 +3,7 @@ import { Worker } from 'node:worker_threads';
 import * as express from 'express';
 
 import { HttpStatusCode } from "../../types/http";
+import { Action } from 'src/typings';
 
 import { getAllApplicationCommands } from "../../managers/ApplicationCommand";
 import { _active_collector } from "../../managers/Collector";
@@ -29,6 +30,8 @@ async function inhandler(interaction: unknown): Promise<void> {
 			interaction: JSON.stringify(interaction),
 			commands: JSON.stringify(await getAllApplicationCommands())
 		}
+	}).on("message", (message: Action) => {
+		console.log(message);
 	});
 }
 
