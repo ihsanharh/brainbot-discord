@@ -1,0 +1,27 @@
+{
+  "name": "chat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "build": "./node_modules/typescript/bin/tsc server.ts",
+    "start": "node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ihsan",
+  "license": "ISC",
+  "engines": {
+    "node": "16.x"
+  },
+  "devDependencies": {
+    "@types/md5": "^2.3.5",
+    "@types/node": "^20.11.30",
+    "@types/superagent": "^8.1.6",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "fastify": "^4.26.2",
+    "md5": "^2.3.0",
+    "superagent": "^8.1.2"
+  }
+}
