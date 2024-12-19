@@ -1,25 +1,36 @@
-version: "3.7"
-
 services:
   redis:
     image: redis:7.2.3-alpine
-    working_dir: /redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - type: bind
-        source: ./redis.conf
-        target: /redis/redis.conf
-    network:
-      - redis
+    command: >
+      --notify-keyspace-events KEA
+    networks:
+      - brainbot
   
   server:
-    build:
-      context: ./server
-    working_dir: /app
-    env_file: .env
+    image: brainbot/server:0.0.1
     depends_on:
       - redis
+    env_file:
+      - ./.env.prod
+    networks:
+      - brainbot
+    ports:
+      - 4095:4095
 
-network:
-  redis:
+  brainbot:
+    image: brainbot:0.0.3
+    depends_on:
+      - redis
+      - server
+    networks:
+      - brainbot
+    volumes:
+      - type: bind
+        source: ./chat/lnks/list.txt
+        target: /home/runner/bot/chat/list.txt
+      - type: bind
+        source: ./.env.dev
+        target: /home/runner/bot/.env
+
+networks:
+  brainbot:

@@ -13,4 +13,5 @@ bot/.abuild/packages/*
 bot/build
 bot/chat
 bot/.env
+chat/lnks
 gateway/build
