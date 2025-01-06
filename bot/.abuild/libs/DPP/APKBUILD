@@ -1,7 +1,7 @@
 # Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
 # Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
 pkgname=DPP
-pkgver=10.0.30
+pkgver=10.0.35
 pkgrel=1
 pkgdesc="apk for DPP"
 url="https://github.com/brainboxdotcc/DPP/"
