@@ -4,13 +4,12 @@ on:
     workflow_dispatch:
     push:
         paths:
-            - 'bot/libs/**'
+            - 'bot/.abuild/libs/**'
 
 jobs:
     build-library:
-        name: Build library
+        name: Build libraries
         runs-on: ubuntu-latest
-        environment: LIBRARY
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -27,14 +26,15 @@ jobs:
             - name: Build packager image
               run: docker build bot -f bot/Dockerfile.lib -t brainbot/lib:latest
 
-            - name: Build bot's library
+            - name: Build the libraries
               run: |
                 mkdir -p ./bot/.abuild/packages
                 chmod 777 ./bot/.abuild/packages
                 docker compose -f docker-compose.lib.yaml up
 
-            - name: Upload library artifact
+            - name: Upload libraries artifact
               uses: actions/upload-artifact@v4
               with:
                 name: packages
                 path: bot/.abuild/packages
+                compression-level: 0
