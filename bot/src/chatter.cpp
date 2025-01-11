@@ -2,6 +2,7 @@
 #include "dbhelper.h"
 #include "mongo.h"
 
+#include <bsoncxx/stdx/optional.hpp> // bsoncxx::stdx::optional
 #include <bsoncxx/json.hpp> // bsoncxx::to_json()
 
 /**
@@ -461,7 +462,7 @@ void chatter(const dpp::message &message, nlohmann::json raw_message)
 	{
 		SPDLOG_TRACE("[@{}] Fetching guild_data", message.author.id);
 		mongocxx::collection chat_collections = Brain::MONGO->database(Brain::Env("DATABASE_NAME")).collection("chats");
-		mongocxx::stdx::optional<bsoncxx::document::value> guild_data = chat_collections.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", guild_id)));
+		bsoncxx::stdx::optional<bsoncxx::document::value> guild_data = chat_collections.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", guild_id)));
 		if (!guild_data) return;
 
 		const std::string str_guild_data = bsoncxx::to_json(*guild_data, bsoncxx::ExtendedJsonMode::k_relaxed);

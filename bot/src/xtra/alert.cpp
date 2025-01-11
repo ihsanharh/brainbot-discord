@@ -1,6 +1,8 @@
 #include "xtra/alert.h"
 #include "mongo.h"
 
+#include <bsoncxx/stdx/optional.hpp>  // bsoncxx::stdx::optional
+
 void alert_join_leave(const std::string& message)
 {
 	SPDLOG_TRACE("Alerting join/leave");
@@ -66,7 +68,7 @@ void send_hi_message(dpp::guild* guild)
 			nlohmann::json first_channel_in_guild = text_channels[0];
 			std::string guild_id = guildId;
 			mongocxx::collection chat_collections = Brain::MONGO->database(Brain::Env("DATABASE_NAME")).collection("chats");
-			mongocxx::stdx::optional<bsoncxx::document::value> guild_data = chat_collections.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", guild_id)));
+			bsoncxx::stdx::optional<bsoncxx::document::value> guild_data = chat_collections.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", guild_id)));
 			
 			// default hi message, never been added to this server
 			std::string hi_message = Constants::Message::FirstTime + Constants::Message::SetupFirstTime;
