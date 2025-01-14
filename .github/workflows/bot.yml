@@ -7,7 +7,6 @@ jobs:
     build-image:
         name: build bot image
         runs-on: ubuntu-latest
-        environment: LIBRARY
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -33,13 +32,20 @@ jobs:
                 ls -la ./bot/.abuild/
                 docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
 
-            - name: test
-              run: docker run brainbot/env:latest "ls -l /etc/apk/keys"
             - name: Build bot image
               run: docker buildx build -f bot/Dockerfile -t brainbot:latest ./bot
 
+            - name: Save the base image
+              run: docke image  savev -o brainbot-env.tar.gz brainbot/env:latest
+
             - name: Save the bot image
               run: docker image save -o brainbot.tar.gz brainbot:latest
+
+            - name: Upload base image artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: brainbot-env
+                path: brainbot-env.tar.gz
 
             - name: Upload image artifact
               uses: actions/upload-artifact@v4
