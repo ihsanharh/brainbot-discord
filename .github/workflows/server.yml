@@ -1,0 +1,26 @@
+name: Server CI
+
+on:
+    workflow_dispatch:
+    push:
+        paths:
+            - 'server/**'
+
+jobs:
+    build-image:
+        name: build server image
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Build the image
+              run: docker buildx build -f server/Dockerfile -t brainbot/server:latest ./server
+
+            - name: Save the image
+              run: docker image save -o brainbot-server.tar.gz brainbot/server:latest
+
+            - name: Upload image artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: brainbot-server
