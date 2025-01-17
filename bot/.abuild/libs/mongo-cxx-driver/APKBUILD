@@ -1,7 +1,7 @@
 # Contributor: IhsanH <ihsanmuhamadd77@gmail.com>
 # Maintainer: IhsanH <ihsanmuhamadd77@gmail.com>
 pkgname=mongo-cxx-driver
-pkgver=3.10.2
+pkgver=4.0.0
 pkgrel=2
 pkgdesc="C++ Driver for MongoDB"
 url="https://github.com/mongodb/mongo-cxx-driver"
@@ -20,9 +20,7 @@ build() {
 	cd $pkgname-r$pkgver
     cmake -S . -B build \
     -DCMAKE_BUILD_TYPE=Release \
-    -DMONGOCXX_OVERRIDE_DEFAULT_INSTALL_PREFIX=OFF \
-	-DCMAKE_INSTALL_PREFIX=/usr \
-    -DENABLE_BSONCXX_POLY_USE_IMPLS=ON
+	-DCMAKE_INSTALL_PREFIX=/usr
     cmake --build build
 }
 
