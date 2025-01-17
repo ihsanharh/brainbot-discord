@@ -32,9 +32,7 @@ jobs:
                 SIGN_PUB_KEY: ${{secrets.SIGN_PUB_KEY}}
 
             - name: Build base image
-              run: |
-                ls -la ./bot/.abuild/
-                docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
+              run: docker buildx build -f bot/Dockerfile.env -t brainbot/env:latest ./bot
 
             - name: Build bot image
               run: docker buildx build -f bot/Dockerfile -t brainbot:latest ./bot
