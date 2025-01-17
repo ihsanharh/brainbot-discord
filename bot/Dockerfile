@@ -22,4 +22,4 @@ COPY --from=builder /bot/build/brainbot .
 RUN adduser -D runner
 USER runner
 
-ENTRYPOINT [ "LD_LIBRARY_PATH=/usr/lib/mongocxx ./brainbot" ]
+ENTRYPOINT [ "LD_LIBRARY_PATH=/usr/lib/mongocxx ./bot/brainbot" ]
