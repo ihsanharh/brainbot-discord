@@ -1,17 +1,14 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
 		"outDir": "./dist/",
 		"rootDir": "./src/",
 		"strict": true,
-		"strictNullChecks": true,
 		"noImplicitReturns": true,
-		"noImplicitAny": true,
 		"skipLibCheck": true,
 		"resolveJsonModule": true,
-		"moduleResolution": "node",
-		"module": "commonjs",
-		"target": "es2021"
+		"module": "CommonJS",
+		"moduleResolution": "node10",
+		"target": "ES2022"
 	},
-	"include": ["./src/**/*", "./src/**/*.json", "environment.d.ts"]
+	"include": ["./src/**/*"]
 }

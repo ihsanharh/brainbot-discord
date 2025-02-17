@@ -2,38 +2,26 @@ import { fetch } from 'undici';
 import { workerData } from 'node:worker_threads';
 import * as path from 'path';
 
-import { APIApplicationCommand, APIInteraction, InteractionResponseType, InteractionType, MessageFlags, Routes } from 'discord-api-types/v10';
+import { InteractionResponseType, InteractionType, MessageFlags, Routes } from 'discord-api-types/v10';
 import { CollectorData, } from "../typings";
 
-import { parse_command, respond } from "./commands/base";
-import { upscaler } from "../txt2img/upscale";
+import { respond } from "./commands/base";
 import { DiscordCommandChannel, Rsa, ServerUrl } from "../utils/config";
 import { res } from "../utils/res";
-import { show_original_image } from "../txt2img/addition";
 import logger from "../services/logger";
 
 async function main(): Promise<void>
 {
-	var { collectors, interaction, commands } = workerData;
-	interaction = JSON.parse(interaction) as APIInteraction;
-	commands = JSON.parse(commands) as APIApplicationCommand[];
+	const { collectors, interaction, commands } = workerData;
 	
-	if (interaction?.type === InteractionType.Ping)
-	{
-		logger.info(`Discord ping received.`);
-
-		return respond(interaction, {
-			type: InteractionResponseType.Pong
-		});
-	}
-	else if (interaction?.type === InteractionType.ApplicationCommand)
+	if (interaction?.type === InteractionType.ApplicationCommand)
 	{
 		let author = interaction?.user ?? interaction?.member?.user;
 		let when: string = `<t:${Math.floor(Date.now()/1000)}:R>`;
 		
 		try
 		{
-			var this_command = new (await import(`./commands/${interaction?.data?.name}`)).default(interaction);
+			var this_command = new (await import(`./commands/${interaction?.data?.name}.js`)).default(interaction);
 			
 			command_logger(`${when} **${author.username}#${author.discriminator}** used </${interaction?.data['name']}:${interaction?.data['id']}>`);
 			return await this_command.props(commands);
@@ -45,7 +33,7 @@ async function main(): Promise<void>
 			return respond(interaction, {
 				type: InteractionResponseType.ChannelMessageWithSource,
 				data: {
-					content: parse_command("", commands),
+					content: `Something went wrong`,
 					flags: MessageFlags.Ephemeral
 				}
 			});
@@ -85,46 +73,6 @@ async function main(): Promise<void>
 				});
 			}
 	    }
-		else if (customId.startsWith("show_result;"))
-		{
-			const image_data = customId.split(";");
-			console.log
-			show_original_image(interaction, image_data[1], image_data[2]);
-		}
-		else if (customId.startsWith("imagine_upscale"))
-		{
-			var updatedButtons = [];
-			var existingComponents = interaction.message.components[0].components;
-			var selectedImageIndex = String(customId).substring(String(customId).lastIndexOf(";")).replace(";", "");
-			var selectedComponent;
-			
-			for (let i = 0; i < existingComponents.length; i++)
-			{
-				if (existingComponents[i].custom_id === customId)
-				{
-					var { style, ...parts } = existingComponents[i];
-					selectedComponent = existingComponents[i];
-					updatedButtons.push({
-						...parts,
-						style: 1
-					});
-				}
-				else updatedButtons.push(existingComponents[i]);
-			}
-						
-			upscaler(interaction, selectedComponent, selectedImageIndex.split(".")[0], Number(selectedImageIndex.split(".")[1]));
-			return respond(interaction, {
-				type: InteractionResponseType.UpdateMessage,
-				data: {
-					components: [
-						{
-							type: 1,
-							components: updatedButtons,
-						}
-					]
-				}
-			})
-		}
 		else
 		{
 			return respond(interaction, {

@@ -13,4 +13,3 @@ export const RedisUrl: string = String(process.env.REDIS);
 
 export const ServerPort: string = String(process.env.SERVER_PORT);
 export const ServerUrl: string = String(process.env.SERVER_URL).replace("$SERVER_PORT", ServerPort);
-export const SdUrl: string = String(process.env.TEXT2IMG);

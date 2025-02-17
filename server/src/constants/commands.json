@@ -26,41 +26,6 @@
         ],
         "default_member_permissions": "UseApplicationCommands",
         "dm_permission": false
-    },    
-    "ImagineCommand": {
-        "name": "imagine",
-        "name_localizations": {},
-        "description": "Imagine an image based on your prompt",
-        "description_localizations": {},
-        "options": [
-            {
-                "type": 3,
-                "name": "model",
-                "name_localizations": {},
-                "description": "Select the model to use",
-                "description_localizations": {},
-                "required": false,
-                "choices": []
-            },
-            {
-                "type": 3,
-                "name": "prompt",
-                "name_localizations": {},
-                "description": "The prompt to imagine",
-                "description_localizations": {},
-                "required": false
-            },
-            {
-                "type": 3,
-                "name": "negative_prompt",
-                "name_localizations": {},
-                "description": "Select the model to use)",
-                "description_localizations": {},
-                "required": false
-            }
-        ],
-        "default_member_permissions": "UseApplicationCommands",
-        "dm_permission": true
     },
     "InfoCommand": {
         "name": "info",

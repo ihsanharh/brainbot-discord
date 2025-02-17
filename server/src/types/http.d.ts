@@ -1,10 +1,8 @@
-"use strict";
-
 /**
  * Hypertext Transfer Protocol (HTTP) response status codes.
  * @see {@link https://en.wikipedia.org/wiki/List_of_HTTP_status_codes}
  */
-export enum HttpStatusCode {
+export const enum HttpStatusCode {
 
     /**
      * The server has received the request headers and the client should proceed to send the request body

@@ -58,10 +58,21 @@ export async function deleteApplicationCommand(application_command: APIApplicati
  * get all available application commands
  * @return {APIApplicationCommand[]|null} An array of APIApplicationCommand or null
  */
-export async function getAllApplicationCommands(): Promise<APIApplicationCommand[]|null>
+export async function getAllApplicationCommands(skipCache?: boolean): Promise<APIApplicationCommand[]>
 {
 	try
 	{
+		if (skipCache) {
+			
+			/**
+			* fetch the commands if there's no cache available
+			*/
+			const FetchedCommands: APIApplicationCommand[] = await res.get(Routes.applicationCommands(DiscordAppId)) as APIApplicationCommand[];
+			FetchedCommands.forEach((application_command: APIApplicationCommand) => redis.HSET("commands", application_command?.id, JSON.stringify(application_command)));
+			
+			return FetchedCommands;
+		}
+
 		/**
 		 * check for cache first and return from cache if possible
  		*/
@@ -72,30 +83,18 @@ export async function getAllApplicationCommands(): Promise<APIApplicationCommand
 			cached_commands.push(JSON.parse(value) as APIApplicationCommand);
 		}
 		
-		if (cached_commands.length >= 1)
-		{
-			return cached_commands;
-		}
-		else
-		{
-			/**
-			 * fetch the commands if there's no cache available
- 			*/
-			const FetchedCommands: APIApplicationCommand[] = await res.get(Routes.applicationCommands(DiscordAppId)) as APIApplicationCommand[];
-			FetchedCommands.forEach((application_command: APIApplicationCommand) => redis.HSET("commands", application_command?.id, JSON.stringify(application_command)));
-			
-			return FetchedCommands;
-		}
+		if (cached_commands.length < 1) return getAllApplicationCommands(true);
+		return cached_commands;
 	}
 	catch (e: unknown)
 	{
 		logger.error(e);
-		return null;
+		return [];
 	}
 }
 
 /**
- * update specific application command
+ * update specific application command 
  * @param {APIApplicationCommand} application_command - command to update
  * @return {void}
  */
@@ -122,28 +121,31 @@ export async function updateApplicationCommand(application_command: APIApplicati
 */
 export function refreshCommands(): void
 {
-	fs.readdir(__dirname.replace("managers", "interaction/commands"), (err: unknown, files: string[]) => {
+	fs.readdir(__dirname.replace("managers", "interaction/commands"), async (err: unknown, files: string[]) => {
 		if (err) throw err;
 
-		files.map((file: string) => file.substring(0, file.length-3)).filter((file: string) => file !== "base").forEach(async (file: string, index: number, files: string[]) => {
-			const existing_commands = await getAllApplicationCommands();
+		const existing_commands = await getAllApplicationCommands(true);
+
+		files.filter((file: string) => !file.startsWith("base")).forEach(async (file: string, index: number, files: string[]) => {
 			const local_command = (new (await import(`../interaction/commands/${file}`)).default()).get_json();
-			console.log(local_command)
-			
 			local_command.default_member_permissions = String(from_string(local_command.default_member_permissions));
-			console.log("err")
+			
 			if (existing_commands && existing_commands?.length >= 1)
 			{
 				const exist_ = existing_commands?.find((command: APIApplicationCommand) => command.name === local_command.name)
-				const no_longer_exist = existing_commands.every((command: APIApplicationCommand) => files.includes(command.name));
 				
 				if (exist_) updateApplicationCommand(exist_, local_command);
-				console.log(no_longer_exist)
 			}
 			else
 			{
 				createApplicationCommand(local_command._applicationCommand);
 			}
+		});
+
+		existing_commands?.forEach((command: APIApplicationCommand) => {
+			if (files.map((file: string) => file.split(".")[0]).includes(command.name)) return;
+
+			deleteApplicationCommand(command);
 		});
 	});
 }

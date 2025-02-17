@@ -30,52 +30,6 @@
                 "That feature exists... in the future! Unfortunately, my time machine is out for repairs. Let me know if you'd like a reminder when it becomes available."
             ]
         },
-        "imagine": {
-            "limit_reached": "The Imagine command is in high demand! It's like the hottest new toy - everyone wants one. You get {0} awesome creations per day, and more will be in stock {1}!",
-            "calmdown": "`You have one task in progress. Please wait for its completion.`",
-            "model_not_found": "Invalid model!",
-            "predict_status": "**{0}** - <@{1}> ({2})",
-            "no_prompt": "Looks like you forgot the 'prompt'-ings! Using the default one for now..",
-            "server_not_ok": "Oops! It seems something went wrong on my end. I apologize for the inconvenience.",
-            "cancelled": "The imagination was cancelled.",
-            "failed": "Failed to imagine your imagination.",
-            "no_output": "Failed to get the output of the imagination.",
-            "error": "Hold on, did an error message about an error message just cause an error? I think I just broke the space-time continuum...",
-            "upscale": {
-                "upscaled_by": "{0} - Upscaled by <@{1}> [{2}/{3}]",
-                "upscaling": "Upscalling image **#{0}** with {1} - (Upscalling by 4x)",
-                "cancelled": "The upscale task was cancelled.",
-                "failed": "Failed to upscale the requested image."
-            },
-            "unused_model": "Unused model deactivated to conserve resources. Reactivation for your request may take a few minutes. Thank you for your patience.",
-            "double_checking": [
-                "This is taking a bit longer than expected, but I'm making progress!",
-				"I'm just double-checking some things, will do the task for you shortly.",
-				"This might require a little extra research, I'll get back to you as soon as I know more."
-            ],
-            "nsfw_detected": [
-                {
-                    "message": "Whoa there! My specialty is sunflowers and kittens, not... whatever you're thinking of. How about a majestic bald eagle soaring over a field of wildflowers instead?",
-                    "new_prompt": "a majestic bald eagle soaring over a field of wildflowers"
-                },
-                {
-                    "message": "Let's keep things classy, shall we? My reputation precedes me, and it involves adorable baby pandas, not... uh... other things",
-                    "new_prompt": "adorable baby pandas"
-                },
-                {
-                    "message": "Oh, you want something spicy? All I can muster is lukewarm at best. How about a slightly suggestive bowl of lukewarm soup?",
-                    "new_prompt": "a slightly suggestive bowl of lukewarm soup"
-                },
-                {
-                    "message": "Error 404: Bonk Patrol Not Found. Generating naughty pictures is strictly forbidden by the Great Algorithm in the Sky. How about a majestic phoenix rising from the ashes... of your search history?",
-                    "new_prompt": "a majestic phoenix rising from the ashes"
-                },
-                {
-                    "message": "I see you're trying to generate some X-rated content. More like 'X' gonna give you something completely unexpected! Here's a picture of a grumpy cat judging your life choices.",
-                    "new_prompt": "a grumpy cat judging your life choices"
-                }
-            ]
-        },
         "info": {
             "default_res": "<:brainbot:992352663779946536> Hey! I'm Brain Bot, an AI-Powered discord chat bot.\n\nHanging out in {0} servers and",
             "chatting_with": " chatting with {0} users!",

@@ -1,5 +1,3 @@
-import 'sharp'; // https://sharp.pixelplumbing.com/install#worker-threads
-import "./error";
 import "./services/redis";
 
 import * as express from 'express';
@@ -10,7 +8,6 @@ import { Express, Response, Request } from 'express';
 import { HttpStatusCode } from "./types/http";
 import { OwnResponsePayloadType } from "./typings";
 
-import { collector_sub } from "./managers/Collector";
 import { asOwnResponse } from "./services/own";
 import { DatabaseUrl, ServerPort } from "./utils/config";
 import logger from "./services/logger";
@@ -21,7 +18,6 @@ mongoose.set('strictQuery', true);
 mongoose.connect(DatabaseUrl)
 .then(() => logger.info("Connected to database"))
 .catch(() => logger.error("Failed to connect to database"));
-collector_sub();
 
 App.disable("x-powered-by"); // disable x-powered-by for security
 App.use(helmet());

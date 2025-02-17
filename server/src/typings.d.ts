@@ -23,7 +23,7 @@ export type CGuildChannelType = APITextChannel|APINewsChannel|APIGuildVoiceChann
 
 export type ActionId = "DATABASE"|"CACHE"|"COLLECTOR";
 
-export enum OwnResponsePayloadType
+export const enum OwnResponsePayloadType
 {
 	REQUEST,
 	AUTHENTICATION,
@@ -32,7 +32,7 @@ export enum OwnResponsePayloadType
 	DISCORD_API
 }
 
-export enum ActionDataOp
+export const enum ActionDataOp
 {
 	FIND_ONE,
 	GET_ONE,
@@ -65,74 +65,6 @@ export interface InteractionResponse
 {
 	body: Readable | string,
 	headers: unknown;
-}
-
-export interface PredictionLimit
-{
-	today: number;
-	daily_quota: number | string;
-	last_timestamp: number;
-}
-
-export interface CheckPredictionType
-{
-	tensec_m?: APIMessage;
-	helpful_m?: APIMessage;
-	nsfw_found?: boolean;
-	prediction: PredictionObject;
-}
-
-interface PredictionOutput
-{
-	url: string;
-	data: string;
-}
-
-export interface PredictionObject
-{
-	status: string;
-	created_at: string;
-	error: string;
-	logs: string;
-	metrics: {
-		predict_time: number;
-	};
-	output: PredictionOutput[];
-	[k: string]: unknown;
-}
-
-export interface PredictionRequestJson
-{
-	_?: {
-		num_outputs: number;
-		height: number;
-		width: number;
-	},
-	model: string;
-	exist?: boolean;
-	name?: string;
-	tag_name?: string;
-	version?: string;
-	default?: PredictionRequestJsonDefault;
-}
-
-export interface PredictionRequestJsonDefault
-{
-	apply_watermark?: boolean;
-	guidance_scale?: number;
-	high_noise_frac?: number;
-	lora_scale?: number;
-	negative_prompt?: string;
-	num_inference_steps?: number;
-	num_inference_steps_prior?: number;
-	num_outputs?: number;
-	output_format?: string;
-	width?: number;
-	height?: number;
-	prompt?: string;
-	prompt_strength?: number;
-	refine?: string;
-	scheduler?: string;
 }
 
 export interface OwnResponsePayload

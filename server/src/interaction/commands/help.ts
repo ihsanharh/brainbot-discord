@@ -247,7 +247,7 @@ class Help extends Command
 				},
 				body: JSON.stringify({
 					id: collector_id,
-					filename: "help",
+					filename: "help.js",
 					pwd: __dirname,
 					time: 60000,
 					expand_on_click: true,

@@ -1,5 +1,5 @@
 # transpiling typescript to javascript first
-FROM node:20.11-alpine AS transpile
+FROM node:22-alpine AS transpile
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN npm install --include=dev
 RUN npm run build
 
 # stage 2 running the server in production
-FROM node:20.11-alpine
+FROM node:22-alpine
 
 RUN adduser -D runner
 
